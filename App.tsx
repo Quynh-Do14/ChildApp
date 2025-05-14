@@ -16,6 +16,7 @@ import DrawerMenu from './src/infrastructure/common/layouts/drawer-menu';
 import EditProfile from './src/page/profile/components/editProfile';
 import ForgotPasswordScreen from './src/page/Auth/forgotPassword';
 import ResetPasswordScreen from './src/page/Auth/resetPassword';
+import ChatSlugScreen from './src/page/chat/chatSlug';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -56,6 +57,7 @@ const StackNavigator = () => {
       <Stack.Screen name={"EditProfile"} component={EditProfile} />
       <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
       <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
+      <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
     </Stack.Navigator>
   );
   // }

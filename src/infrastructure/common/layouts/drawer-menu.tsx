@@ -104,13 +104,14 @@ const styles = StyleSheet.create({
     drawerContainer: {
         flex: 1,
         backgroundColor: '#4f3f97',
-        paddingTop: 50,
+        paddingTop: 24,
         paddingHorizontal: 16,
+        paddingBottom: 12
     },
     profileContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 25,
+        marginBottom: 12,
     },
     avatar: {
         width: 50, height: 50, borderRadius: 25,
