@@ -1,12 +1,19 @@
 export class Endpoint {
     static Auth = class {
         static Login = "/auth/login"
-        static Signup = "/signup"
-        static Profile = "/students/me"
+        static Signup = "/auth/signup"
+        static Profile = "/users/profile"
         static UpdateProfile = "/students/me"
         static ResetPassword = "/auth/reset-password"
-        static ForgotPassword = "/auth/forgot-password"
+        static ForgotPassword = "/api/auth/forgot-password"
     }
+
+    static Conversation = class {
+        static MyConversation = "/conversations/my-conversations"
+        static SendMessage = "/conversations/send-message"
+        static ChatLog = "/conversations/chatlogs"
+    }
+
     static Exam = class {
         static Get = "/v1/exams/search"
     }

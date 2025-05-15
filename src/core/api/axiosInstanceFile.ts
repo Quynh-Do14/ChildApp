@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const axiosInstanceFile = axios.create({
     // baseURL: process.env.REACT_APP_BASE_URL,
-    baseURL: "http://192.168.1.4:8080",
+    baseURL: "http://192.168.100.79:8080",
     responseType: 'arraybuffer',
     headers: {
         "Content-Type": "application/json",

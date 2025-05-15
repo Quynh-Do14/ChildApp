@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import MainLayout from '../../infrastructure/common/layouts/layout'
+import conversationService from '../../infrastructure/repositories/conversation/conversation.service';
 
 export const fakeConversations = [
     {
@@ -24,25 +25,49 @@ export const fakeConversations = [
 ]
 
 const ChatListScreen = ({ navigation }: any) => {
+    const [loading, setLoading] = useState<boolean>(false);
+    const [myConversation, setMyConversation] = useState<any[]>([])
+    const GetMyConversationAsync = async () => {
+        try {
+            await conversationService.getMyConversation(
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    setMyConversation(response)
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    useEffect(() => {
+        GetMyConversationAsync().then(() => { });
+    }, [])
     const renderItem = ({ item }: any) => (
         <TouchableOpacity
             style={styles.chatItem}
             onPress={() => {
                 // Điều hướng sang màn ChatBotScreen (hoặc ChatDetailScreen)
-                navigation.navigate('ChatSlugScreen', { chatId: item.id });
+                navigation.navigate('ChatSlugScreen',
+                    {
+                        chatId: item.id,
+                        receiverId: item.wantToSendUser.id,
+                        name: item.wantToSendUser.name
+                    });
             }}
         >
             <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+                <Text style={styles.avatarText}>{item.wantToSendUser?.name.charAt(0)}</Text>
             </View>
             <View style={styles.chatInfo}>
-                <Text style={styles.chatName}>{item.name}</Text>
+                <Text style={styles.chatName}>{item.wantToSendUser?.name}</Text>
                 <Text style={styles.lastMessage} numberOfLines={1}>
                     {item.lastMessage}
                 </Text>
             </View>
             <Text style={styles.time}>
-                {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {new Date(item.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
         </TouchableOpacity>
     );
@@ -52,7 +77,7 @@ const ChatListScreen = ({ navigation }: any) => {
             <View style={styles.container}>
                 <Text style={styles.header}>Danh sách trò chuyện</Text>
                 <FlatList
-                    data={fakeConversations}
+                    data={myConversation}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContainer}

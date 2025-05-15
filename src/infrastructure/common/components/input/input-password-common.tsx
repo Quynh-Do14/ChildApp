@@ -13,6 +13,7 @@ type Props = {
     validate: any,
     setValidate: Function,
     submittedTime?: any,
+    onSubmitEditing?: () => void,
 }
 const InputPasswordCommon = (props: Props) => {
     const {
@@ -23,7 +24,8 @@ const InputPasswordCommon = (props: Props) => {
         dataAttribute,
         validate,
         setValidate,
-        submittedTime
+        submittedTime,
+        onSubmitEditing,
     } = props;
     const [value, setValue] = useState<string>("");
     const [showPassword, setShowPassword] = useState<boolean>(true);
@@ -62,9 +64,6 @@ const InputPasswordCommon = (props: Props) => {
             <View
                 style={styles.container}
             >
-                {/* <Text style={styles.labelStyle}>
-                    {label}
-                </Text> */}
                 <View>
                     <TextInput
                         placeholder={`Nhập ${labelLower}`}
@@ -73,6 +72,8 @@ const InputPasswordCommon = (props: Props) => {
                         onBlur={() => onBlur(false)}
                         placeholderTextColor={"#ABABAB"}
                         secureTextEntry={showPassword}
+                        returnKeyType='go'
+                        onSubmitEditing={onSubmitEditing}
                         style={[{ position: "relative" },
                         styles.fontStyle,
                         styles.inputStyle,
@@ -95,7 +96,7 @@ const InputPasswordCommon = (props: Props) => {
 export default InputPasswordCommon;
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 12
+        marginBottom: 4
     },
     fontStyle: {
         color: "#232323",

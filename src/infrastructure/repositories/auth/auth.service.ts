@@ -14,7 +14,7 @@ class AuthService {
                 .then(response => {
                     if (response) {
                         saveToken(
-                            response.token,
+                            response.accessToken,
                         );
                     }
                     setLoading(false)
@@ -109,11 +109,11 @@ class AuthService {
             setLoading(false);
         }
     }
-    async forgotPassword(email: string, setLoading: Function) {
+    async forgotPassword(data: any, setLoading: Function) {
         setLoading(true)
         try {
-            return await RequestService.post(`${Endpoint.Auth.ForgotPassword}?email=${email}`,
-                {}
+            return await RequestService.post(`${Endpoint.Auth.ForgotPassword}`,
+                data
             ).then(response => {
                 Alert.alert(`Gửi email thành công`);
                 return response;

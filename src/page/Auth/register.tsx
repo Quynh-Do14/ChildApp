@@ -7,13 +7,17 @@ import InputPasswordCommon from '../../infrastructure/common/components/input/in
 import ButtonCommon from '../../infrastructure/common/components/button/button-common';
 import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
 import React from 'react';
-const LoginScreen = () => {
+const RegisterScreen = () => {
     const [_data, _setData] = useState<any>({});
     const [validate, setValidate] = useState<any>({});
     const [submittedTime, setSubmittedTime] = useState<any>(null);
     const [loading, setLoading] = useState<boolean>(false);
 
     const navigation = useNavigation<any>();
+
+    const onGoBack = () => {
+        navigation.goBack()
+    }
 
     const dataProfile = _data;
     const setDataProfile = (data: any) => {
@@ -36,33 +40,26 @@ const LoginScreen = () => {
     };
     const onLoginAsync = async () => {
         await setSubmittedTime(Date.now());
-        // if (isValidData()) {
-        try {
-            await authService.login(
-                {
-                    email: dataProfile.email,
-                    password: dataProfile.password,
-                },
-                // {
-                //     email: "admin2@gmail.com",
-                //     password: "12345678",
-                // },
-                setLoading,
-            ).then((response) => {
-                if (response) {
-                    setDataProfile(
-                        {
-                            username: "",
-                            password: "",
-                        },
-                    )
-                    navigation.replace('DrawerMenu');
-                }
-            });
-        } catch (error) {
-            console.error(error);
+        if (isValidData()) {
+            try {
+                await authService.register(
+                    {
+                        email: dataProfile.email,
+                        name: dataProfile.name,
+                        password: dataProfile.password,
+                        phoneNumber: dataProfile.phoneNumber,
+                        confirmPassword: dataProfile.confirmPassword,
+                    },
+                    setLoading,
+                ).then((response) => {
+                    if (response) {
+                        navigation.navigate('LoginScreen');
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+            }
         }
-        // }
     }
 
     return (
@@ -116,6 +113,28 @@ const LoginScreen = () => {
                                     setValidate={setValidate}
                                     submittedTime={submittedTime}
                                 />
+                                <InputTextCommon
+                                    label={"Họ tên"}
+                                    attribute={"name"}
+                                    dataAttribute={dataProfile.fullName}
+                                    isRequired={false}
+                                    setData={setDataProfile}
+                                    editable={true}
+                                    validate={validate}
+                                    setValidate={setValidate}
+                                    submittedTime={submittedTime}
+                                />
+                                <InputTextCommon
+                                    label={"Số điện thoại"}
+                                    attribute={"phoneNumber"}
+                                    dataAttribute={dataProfile.phoneNumber}
+                                    isRequired={false}
+                                    setData={setDataProfile}
+                                    editable={true}
+                                    validate={validate}
+                                    setValidate={setValidate}
+                                    submittedTime={submittedTime}
+                                />
                                 <InputPasswordCommon
                                     label={"Mật khẩu"}
                                     attribute={"password"}
@@ -125,22 +144,24 @@ const LoginScreen = () => {
                                     validate={validate}
                                     setValidate={setValidate}
                                     submittedTime={submittedTime}
-                                    onSubmitEditing={onLoginAsync}
+                                />
+                                <InputPasswordCommon
+                                    label={"Nhập lại mật khẩu"}
+                                    attribute={"confirmPassword"}
+                                    dataAttribute={dataProfile.confirmPassword}
+                                    isRequired={false}
+                                    setData={setDataProfile}
+                                    validate={validate}
+                                    setValidate={setValidate}
+                                    submittedTime={submittedTime}
                                 />
                                 {/* Remember Me and Forgot Password */}
-                                <View style={styles.rowRight}>
-                                    <TouchableOpacity
-                                        onPress={() => navigation.navigate("ForgotPasswordScreen")}
-                                    >
-                                        <Text style={styles.forgotPassword}>Quên mật khẩu</Text>
-                                    </TouchableOpacity>
-                                </View>
-                                <ButtonCommon title="Đăng Nhập" onPress={onLoginAsync} />
+                                <ButtonCommon title="Đăng Kí" onPress={onLoginAsync} />
                                 <View style={styles.row}>
                                     <TouchableOpacity
-                                        onPress={() => navigation.navigate("RegisterScreen")}
+                                        onPress={onGoBack}
                                     >
-                                        <Text style={styles.forgotPassword}>Bạn chưa có tài khoản.Đăng kí</Text>
+                                        <Text style={styles.forgotPassword}>Quay lại</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -153,7 +174,7 @@ const LoginScreen = () => {
     )
 }
 
-export default LoginScreen
+export default RegisterScreen
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#F8F9FA',
@@ -163,7 +184,7 @@ const styles = StyleSheet.create({
         flex: 1
     },
     logo: {
-        flex: 5,
+        flex: 3,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
@@ -174,7 +195,7 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     content: {
-        flex: 5,
+        flex: 6,
         paddingHorizontal: 12,
         paddingVertical: 20
     },

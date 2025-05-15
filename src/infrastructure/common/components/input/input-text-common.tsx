@@ -84,9 +84,6 @@ const InputTextCommon = (props: Props) => {
             <View
                 style={styles.container}
             >
-                {/* <Text style={styles.labelStyle}>
-                    {label}
-                </Text> */}
                 <View>
                     <TextInput
                         placeholder={`Nhập ${labelLower}`}
@@ -121,7 +118,7 @@ const InputTextCommon = (props: Props) => {
 export default InputTextCommon;
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 12
+        marginBottom: 4
     },
     fontStyle: {
         color: "#232323",

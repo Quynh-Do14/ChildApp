@@ -17,6 +17,9 @@ import EditProfile from './src/page/profile/components/editProfile';
 import ForgotPasswordScreen from './src/page/Auth/forgotPassword';
 import ResetPasswordScreen from './src/page/Auth/resetPassword';
 import ChatSlugScreen from './src/page/chat/chatSlug';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import RegisterScreen from './src/page/Auth/register';
+import OtpVerificationScreen from './src/page/Auth/veriify-otp';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -54,6 +57,8 @@ const StackNavigator = () => {
         options={{ headerShown: false }}
       />
       <Stack.Screen name={Constants.Navigator.Auth.LoginScreen.value} component={LoginScreen} />
+      <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
+      <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
       <Stack.Screen name={"EditProfile"} component={EditProfile} />
       <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
       <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
@@ -66,11 +71,13 @@ const StackNavigator = () => {
 
 function App(): React.JSX.Element {
   return (
-    <RecoilRoot>
-      <NavigationContainer>
-        <StackNavigator />
-      </NavigationContainer>
-    </RecoilRoot>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <RecoilRoot>
+        <NavigationContainer>
+          <StackNavigator />
+        </NavigationContainer>
+      </RecoilRoot>
+    </GestureHandlerRootView>
   );
 }
 

@@ -1,103 +1,120 @@
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
-import React, { useState } from 'react'
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react'
 import MainLayout from '../../infrastructure/common/layouts/layout'
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import conversationService from '../../infrastructure/repositories/conversation/conversation.service';
 
-export const fakeMessages = [
-    {
-        id: '1',
-        sender: 'bot',
-        text: 'Xin chào! Tớ có thể giúp gì cho bạn hôm nay?',
-        timestamp: '2025-05-14T10:00:00',
-    },
-    {
-        id: '2',
-        sender: 'user',
-        text: 'Tớ muốn biết hôm nay nên học gì?',
-        timestamp: '2025-05-14T10:01:30',
-    },
-    {
-        id: '3',
-        sender: 'bot',
-        text: 'Bạn nên ôn lại Toán và học thêm 1 bài Tiếng Anh nhé!',
-        timestamp: '2025-05-14T10:01:50',
-    },
-];
+
 
 
 const ChatSlugScreen = () => {
-    const [messages, setMessages] = useState(fakeMessages);
     const [inputText, setInputText] = useState('');
     const navigation = useNavigation<any>();
+    const route = useRoute();
+    const { chatId, receiverId, name } = route.params;
+
+    const flatListRef = useRef<FlatList>(null);
+
+    const [loading, setLoading] = useState<boolean>(false);
+    const [chatLog, setChatLog] = useState<any[]>([]);
+
+    const GetMyChatLogAsync = async () => {
+        try {
+            await conversationService.GetChatLogById(
+                String(chatId),
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    setChatLog(response)
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    useEffect(() => {
+        GetMyChatLogAsync().then(() => { });
+    }, [])
 
     const onGoBack = () => {
         navigation.goBack();
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!inputText.trim()) return;
 
-        const newUserMessage = {
-            id: (messages.length + 1).toString(),
-            sender: 'user',
-            text: inputText,
-            timestamp: new Date().toISOString(),
-        };
+        try {
+            await conversationService.SendMessage(
+                {
+                    receiverId: receiverId,
+                    message: inputText
+                },
+                setLoading,
+            );
 
-        // Fake response bot
-        const botReply = {
-            id: (messages.length + 2).toString(),
-            sender: 'bot',
-            text: 'Tớ đã ghi nhận, bạn cần gì thêm không?',
-            timestamp: new Date().toISOString(),
-        };
+            setInputText('');
 
-        setMessages([...messages, newUserMessage, botReply]);
-        setInputText('');
+            await GetMyChatLogAsync(); // chờ tin nhắn mới render
+
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const renderItem = ({ item }: any) => {
-        const isUser = item.sender === 'user';
+        const isSender = item.sender == null ? false : true
         return (
             <View
                 style={[
                     styles.messageContainer,
-                    isUser ? styles.userMessage : styles.botMessage,
+                    isSender ? styles.userMessage : styles.botMessage,
                 ]}
             >
-                <Text style={styles.messageText}>{item.text}</Text>
+                <Text style={styles.messageText}>{item.message}</Text>
             </View>
         );
     };
 
     return (
         <MainLayout
-            title={'Trò chuyện với Bot'}
+            title={name}
             isBackButton={true}
             onGoBack={onGoBack}
             noSpaceEnd={true}
         >
             <View style={styles.container}>
                 <FlatList
-                    data={messages}
+                    ref={flatListRef}
+                    data={chatLog}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.chatContainer}
+                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 />
+                <KeyboardAvoidingView behavior='padding'>
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                value={inputText}
+                                onChangeText={setInputText}
+                                placeholder="Nhập tin nhắn..."
+                                onSubmitEditing={handleSend}
+                                returnKeyType='send'
+                            />
+                            <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
+                                <Text style={styles.sendText}>Gửi</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </KeyboardAvoidingView>
 
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        value={inputText}
-                        onChangeText={setInputText}
-                        placeholder="Nhập tin nhắn..."
-                    />
-                    <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-                        <Text style={styles.sendText}>Gửi</Text>
-                    </TouchableOpacity>
-                </View>
             </View>
-        </MainLayout>
+        </MainLayout >
 
     )
 }

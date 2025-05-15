@@ -56,7 +56,7 @@ const ProfileScreen = ({ navigation }: any) => {
                         style={styles.avatar}
                     />
                     <View style={{ marginLeft: 16 }}>
-                        <Text style={styles.name}>{dataProfile?.fullName}</Text>
+                        <Text style={styles.name}>{dataProfile?.name}</Text>
                         <Text style={styles.email}>{dataProfile?.email}</Text>
                     </View>
                 </View>

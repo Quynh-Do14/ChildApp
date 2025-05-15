@@ -43,9 +43,8 @@ const CustomDrawerContent = ({ navigation }: any) => {
                     style={styles.avatar}
                 />
                 <View style={{ marginLeft: 10, flexDirection: "column", gap: 8 }}>
-                    <Text style={styles.name}>{dataProfile.fullName}</Text>
-                    <Text style={styles.class}>{dataProfile.departmentName}</Text>
-                    <Text style={styles.class}>{dataProfile.majorName}</Text>
+                    <Text style={styles.name}>{dataProfile.name}</Text>
+                    <Text style={styles.class}>{dataProfile.username}</Text>
                 </View>
             </View>
 

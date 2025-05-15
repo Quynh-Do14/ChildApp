@@ -46,11 +46,6 @@ const EditProfile = () => {
             </View>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Ngành</Text>
-            <Text style={styles.value}>{dataProfile.departmentName}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
             <Text style={styles.label}>Tên đăng nhập</Text>
             <Text style={[styles.value, styles.linkColor]}>{dataProfile.username}</Text>
           </View>
@@ -60,12 +55,8 @@ const EditProfile = () => {
             <Text style={[styles.value, styles.linkColor]}>{dataProfile.email}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Giới tính</Text>
-            <Text style={styles.value}>{dataProfile.gender}</Text>
-          </View>
-          <View style={styles.infoRow}>
             <Text style={styles.label}>SĐT</Text>
-            <Text style={[styles.value, styles.linkColor]}>{dataProfile.phone}</Text>
+            <Text style={[styles.value, styles.linkColor]}>{dataProfile.phoneNumber}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Trạng thái</Text>

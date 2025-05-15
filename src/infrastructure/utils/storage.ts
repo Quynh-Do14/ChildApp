@@ -11,8 +11,6 @@ export const isTokenStoraged = async () => {
   const token = await AsyncStorage.getItem("token").then(result => {
     return result
   });
-  console.log("token", token);
-
   return !!token;
 };
 

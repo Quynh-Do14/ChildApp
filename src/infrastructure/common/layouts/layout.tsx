@@ -47,6 +47,8 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
             getProfileUser();
         }
     }, [token]);
+    console.log("dataProfile", dataProfile);
+
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -69,7 +71,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
 
                 <View style={styles.textContainer}>
                     <Text style={styles.name}>
-                        {dataProfile?.data?.fullName}
+                        {dataProfile?.data?.name}
                     </Text>
                     <Text style={styles.class}>{title}</Text>
                 </View>

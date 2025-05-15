@@ -91,11 +91,11 @@ export default class Constants {
                 label: "Thông tin",
                 icon: "settings-sharp"
             },
-            // {
-            //     value: "ChangePasswordScreen",
-            //     label: "Đổi mật khẩu",
-            //     icon: "keypad",
-            // },
+            {
+                value: "ChangePasswordScreen",
+                label: "Đổi mật khẩu",
+                icon: "keypad",
+            },
         ]
     }
     static Gender = class {
