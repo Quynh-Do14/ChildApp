@@ -20,6 +20,7 @@ import ChatSlugScreen from './src/page/chat/chatSlug';
 import messaging from '@react-native-firebase/messaging';
 import { backgroundMessageHandler, listenToForegroundMessages, requestUserPermission, setupNotificationOpenedHandler } from './src/infrastructure/utils/notification';
 import notificationService from './src/infrastructure/repositories/notification/notification.service';
+import './src/infrastructure/utils/pushNotificationConfig';
 
 const Stack = createNativeStackNavigator();
 
@@ -83,16 +84,11 @@ function App(): React.JSX.Element {
 
         if (fcmToken) {
           console.log('FCM Token obtained:', fcmToken);
-
-          // Lấy user ID từ storage (giả sử bạn đã lưu khi người dùng đăng nhập)
-          const userId = await AsyncStorage.getItem('userId');
-
-          if (userId) {
-            // Đăng ký token với backend
-            await notificationService.registerDeviceToken(fcmToken, 2);
-          } else {
-            console.log('User not logged in yet, will register token after login');
-          }
+          // Đăng ký token mà không cần userId
+          await notificationService.registerDeviceToken(fcmToken);
+          
+          // Lưu token vào AsyncStorage để sử dụng sau này nếu cần
+          await AsyncStorage.setItem('fcmToken', fcmToken);
         }
 
         // Lắng nghe thông báo khi app đang chạy
