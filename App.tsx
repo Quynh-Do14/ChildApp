@@ -17,8 +17,14 @@ import EditProfile from './src/page/profile/components/editProfile';
 import ForgotPasswordScreen from './src/page/Auth/forgotPassword';
 import ResetPasswordScreen from './src/page/Auth/resetPassword';
 import ChatSlugScreen from './src/page/chat/chatSlug';
+import messaging from '@react-native-firebase/messaging';
+import { backgroundMessageHandler, listenToForegroundMessages, requestUserPermission, setupNotificationOpenedHandler } from './src/infrastructure/utils/notification';
+import notificationService from './src/infrastructure/repositories/notification/notification.service';
 
 const Stack = createNativeStackNavigator();
+
+messaging().setBackgroundMessageHandler(backgroundMessageHandler);
+
 const StackNavigator = () => {
   const [initialRoute, setInitialRoute] = useState<string>("");
   const [isLogin, setIsLogin] = useState<boolean>(false);
@@ -65,6 +71,48 @@ const StackNavigator = () => {
 
 
 function App(): React.JSX.Element {
+  const navigationRef = React.useRef(null);
+
+  useEffect(() => {
+    const setupNotifications = async () => {
+      try {
+        console.log('Setting up notifications...');
+
+        // Yêu cầu quyền và lấy FCM token
+        const fcmToken = await requestUserPermission();
+
+        if (fcmToken) {
+          console.log('FCM Token obtained:', fcmToken);
+
+          // Lấy user ID từ storage (giả sử bạn đã lưu khi người dùng đăng nhập)
+          const userId = await AsyncStorage.getItem('userId');
+
+          if (userId) {
+            // Đăng ký token với backend
+            await notificationService.registerDeviceToken(fcmToken, 2);
+          } else {
+            console.log('User not logged in yet, will register token after login');
+          }
+        }
+
+        // Lắng nghe thông báo khi app đang chạy
+        const unsubscribeForeground = listenToForegroundMessages();
+
+        // Thiết lập xử lý khi nhấn vào thông báo
+        setupNotificationOpenedHandler(navigationRef.current);
+
+        return () => {
+          // Dọn dẹp khi unmount
+          unsubscribeForeground();
+        };
+      } catch (error) {
+        console.error('Error setting up notifications:', error);
+      }
+    };
+
+    setupNotifications();
+  }, []);
+
   return (
     <RecoilRoot>
       <NavigationContainer>
