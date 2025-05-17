@@ -20,6 +20,8 @@ import ChatSlugScreen from './src/page/chat/chatSlug';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RegisterScreen from './src/page/Auth/register';
 import OtpVerificationScreen from './src/page/Auth/veriify-otp';
+import fcmService from './src/infrastructure/repositories/fcm/fcmService';
+import { Alert } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -70,6 +72,62 @@ const StackNavigator = () => {
 
 
 function App(): React.JSX.Element {
+  const [currentNotification, setCurrentNotification] = useState(null);
+
+  useEffect(() => {
+    // Khởi tạo FCM khi app khởi động
+    const initFCM = async () => {
+      try {
+        // Yêu cầu quyền
+        const hasPermission = await fcmService.requestUserPermission();
+
+        if (hasPermission) {
+          // Lấy và đăng ký token
+          const token = await fcmService.getFCMToken();
+          console.log('FCM token in App.js:', token);
+
+          // Thiết lập lắng nghe thông báo
+          const unsubscribe = fcmService.setupMessageListeners((notification: any) => {
+            console.log('Notification received in App.js:', notification);
+
+            // Lưu thông báo vào state nếu cần
+            setCurrentNotification(notification);
+
+            // Hiển thị thông báo (có thể thay bằng component tùy chỉnh)
+            if (notification.notification) {
+              Alert.alert(
+                notification.notification.title || 'Thông báo mới',
+                notification.notification.body,
+                [{ text: 'OK', onPress: () => console.log('OK pressed') }],
+                { cancelable: false }
+              );
+            }
+
+            // Xử lý hành động khi nhận thông báo
+            // Ví dụ: điều hướng đến màn hình cụ thể
+            if (notification.data && notification.data.screen) {
+              // navigation.navigate(notification.data.screen, notification.data.params);
+              console.log('Should navigate to:', notification.data.screen);
+            }
+          });
+
+          // Thiết lập lắng nghe token refresh
+          const unsubscribeTokenRefresh = fcmService.setupTokenRefresh();
+
+          // Dọn dẹp khi unmount
+          return () => {
+            unsubscribe && unsubscribe();
+            unsubscribeTokenRefresh && unsubscribeTokenRefresh();
+          };
+        }
+      } catch (error) {
+        console.log('FCM initialization error:', error);
+      }
+    };
+
+    initFCM();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <RecoilRoot>

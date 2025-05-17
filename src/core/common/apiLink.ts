@@ -33,4 +33,7 @@ export class Endpoint {
         static GetGradeByUser = "/v1/grades/userId"
         static GetGradeByCourse = "/v1/grades/courseId"
     }
+    static Notification = class {
+        static RegisterToken = "/device-tokens/register"
+    }
 };
