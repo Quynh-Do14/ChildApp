@@ -12,10 +12,14 @@ import { useNavigation } from '@react-navigation/native';
 import authService from '../../repositories/auth/auth.service';
 import { ProfileState } from '../../../core/atoms/profile/profileState';
 import Feather from 'react-native-vector-icons/Feather';
+import { ChildState } from '../../../core/atoms/child/childState';
+import userService from '../../repositories/user/user.service';
 
 const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) => {
     const [token, setToken] = useState<string>('');
     const [dataProfile, setDataProfile] = useRecoilState(ProfileState);
+    const [, setDataChildren] = useRecoilState(ChildState);
+
     const navigation = useNavigation<any>();
 
     const getTokenStoraged = async () => {
@@ -42,9 +46,26 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         }
     };
 
+    const GetMyChildrenAsync = async () => {
+        try {
+            await userService.getChild(
+                () => { },
+            ).then((response) => {
+                if (response) {
+                    setDataChildren({
+                        data: response
+                    })
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     useEffect(() => {
         if (token) {
             getProfileUser();
+            GetMyChildrenAsync();
         }
     }, [token]);
     console.log("dataProfile", dataProfile);

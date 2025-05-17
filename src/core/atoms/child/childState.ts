@@ -1,7 +1,7 @@
 import { atom } from "recoil";
 
-export const RoomState = atom({
-    key: 'ROOM_STATE', // unique ID (with respect to other atoms/selectors)
+export const ChildState = atom({
+    key: 'CHILD_STATE', // unique ID (with respect to other atoms/selectors)
     default: {
         // isLoading: false,
         // uri: '',

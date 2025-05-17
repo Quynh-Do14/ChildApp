@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import React, { useEffect, useState } from 'react'
 import MainLayout from '../../infrastructure/common/layouts/layout'
 import conversationService from '../../infrastructure/repositories/conversation/conversation.service';

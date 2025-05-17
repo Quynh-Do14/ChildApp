@@ -18,8 +18,8 @@ import LoadingFullScreen from '../../infrastructure/common/components/controls/l
 const OtpVerificationScreen = () => {
     const navigation = useNavigation<any>();
     const [loading, setLoading] = useState<boolean>(false);
-    const [otp, setOtp] = useState<string[]>(['', '', '', '']);
-    const otpLength = 4;
+    const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
+    const otpLength = 6;
     const inputRefs = useRef<(TextInput | null)[]>([]);
 
     const handleChangeText = (text: string, index: number) => {
@@ -40,9 +40,14 @@ const OtpVerificationScreen = () => {
         try {
             setLoading(true);
             // TODO: Gọi API xác thực OTP tại đây
-            // await authService.verifyOTP(...);
-            console.log('OTP xác nhận:', fullOtp);
-            navigation.navigate('LoginScreen');
+            await authService.loginOTP(
+                fullOtp,
+                setLoading
+            ).then((response) => {
+                if (response) {
+                    navigation.replace('DrawerMenu');
+                }
+            });
         } catch (error) {
             console.error(error);
         } finally {
@@ -87,7 +92,7 @@ const OtpVerificationScreen = () => {
                 </View>
 
                 <ButtonCommon
-                    title="Xác thực"
+                    title="Đăng nhập"
                     onPress={handleVerifyOtp}
                 />
 
@@ -122,11 +127,11 @@ const styles = StyleSheet.create({
     otpContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        gap: 12,
+        gap: 4,
         marginBottom: 24,
     },
     otpInput: {
-        width: 55,
+        width: 50,
         height: 60,
         borderWidth: 2,
         borderRadius: 10,

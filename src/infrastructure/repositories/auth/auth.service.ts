@@ -1,7 +1,6 @@
 import { Endpoint } from "../../../core/common/apiLink";
 import { Alert } from "react-native";
 import { RequestService } from "../../utils/response";
-import { messageConfig } from "../../helper/message";
 import { clearStorage, saveToken } from "../../utils/storage";
 class AuthService {
     async login(data: object, setLoading: Function) {
@@ -10,6 +9,31 @@ class AuthService {
             return await RequestService
                 .post(Endpoint.Auth.Login,
                     data
+                )
+                .then(response => {
+                    if (response) {
+                        saveToken(
+                            response.accessToken,
+                        );
+                    }
+                    setLoading(false)
+                    return response;
+                });
+        } catch (error: any) {
+            Alert.alert(`Đăng nhập không thành công`, error.response.data.message);
+            console.error(error)
+        } finally {
+            setLoading(false);
+        }
+    }
+
+
+    async loginOTP(otp: string, setLoading: Function) {
+        setLoading(true);
+        try {
+            return await RequestService
+                .post(`${Endpoint.Auth.OTP}/${otp}`,
+                    {}
                 )
                 .then(response => {
                     if (response) {

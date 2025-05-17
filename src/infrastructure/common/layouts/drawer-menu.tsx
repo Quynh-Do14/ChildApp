@@ -44,7 +44,7 @@ const CustomDrawerContent = ({ navigation }: any) => {
                 />
                 <View style={{ marginLeft: 10, flexDirection: "column", gap: 8 }}>
                     <Text style={styles.name}>{dataProfile.name}</Text>
-                    <Text style={styles.class}>{dataProfile.username}</Text>
+                    <Text style={styles.class}>{dataProfile.email}</Text>
                 </View>
             </View>
 
@@ -53,16 +53,20 @@ const CustomDrawerContent = ({ navigation }: any) => {
 
             {/* Menu items */}
             {
-                bottomNavigator.map((it, index) => (
-                    <TouchableOpacity
-                        key={index}
-                        style={styles.menuItem}
-                        onPress={() => navigation.navigate(it.name)}
-                    >
-                        <Icon name={it.icon || 'dots-grid'} size={22} color="#fff" style={{ marginRight: 16 }} />
-                        <Text style={styles.menuText}>{it.name || it.name}</Text>
-                    </TouchableOpacity>
-                ))
+                bottomNavigator.map((it, index) => {
+                    if (it.role.includes(dataProfile.role)) {
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                style={styles.menuItem}
+                                onPress={() => navigation.navigate(it.name)}
+                            >
+                                <Icon name={it.icon || 'dots-grid'} size={22} color="#fff" style={{ marginRight: 16 }} />
+                                <Text style={styles.menuText}>{it.name || it.name}</Text>
+                            </TouchableOpacity>
+                        )
+                    }
+                })
             }
 
             {/* Logout button */}

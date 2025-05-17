@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import MainLayout from '../../infrastructure/common/layouts/layout'
 import {
     View,
@@ -7,6 +7,8 @@ import {
     TouchableOpacity,
     StyleSheet,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import LoadingFullScreen from '../../infrastructure/common/components/controls/loading'
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
@@ -14,62 +16,29 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ButtonCommon from '../../infrastructure/common/components/button/button-common';
 import { useNavigation } from '@react-navigation/native';
 import InputTextCommon from '../../infrastructure/common/components/input/input-text-common';
-
-const fakeTasks = [
-    {
-        id: 'task_001',
-        title: 'Học 30 phút Toán lớp 5',
-        deadline: '2025-05-14 19:00',
-        completed: false,
-    },
-    {
-        id: 'task_002',
-        title: 'Gấp quần áo và dọn phòng',
-        deadline: '2025-05-14 20:30',
-        completed: true,
-    },
-    {
-        id: 'task_003',
-        title: 'Đọc truyện 20 phút',
-        deadline: '2025-05-15 17:00',
-        completed: false,
-    },
-    {
-        id: 'task_004',
-        title: 'Tập thể dục 15 phút',
-        deadline: '2025-05-15 06:30',
-        completed: false,
-    },
-    {
-        id: 'task_005',
-        title: 'Giúp mẹ rửa bát sau ăn tối',
-        deadline: '2025-05-14 20:00',
-        completed: true,
-    },
-];
-
-type Task = {
-    id: string;
-    title: string;
-    deadline: string;
-    completed: boolean;
-};
+import InputDatePickerCommon from '../../infrastructure/common/components/input/input-date-common';
+import missionService from '../../infrastructure/repositories/mission/mission.service';
+import { convertDate } from '../../infrastructure/helper/helper';
+import SelectCommon from '../../infrastructure/common/components/input/select-common';
+import { useRecoilValue } from 'recoil';
+import { ChildState } from '../../core/atoms/child/childState';
+import { ProfileState } from '../../core/atoms/profile/profileState';
 
 const MissionScreen = () => {
-    const [tasks, setTasks] = useState<Task[]>(fakeTasks);
     const [editingId, setEditingId] = useState<string | null>(null);
-
     const [_data, _setData] = useState<any>({});
     const [validate, setValidate] = useState<any>({});
     const [submittedTime, setSubmittedTime] = useState<any>(null);
     const [loading, setLoading] = useState<boolean>(false);
-
+    const [listMission, setListMission] = useState<any[]>([])
     const navigation = useNavigation<any>();
+    const dataChildren = useRecoilValue(ChildState).data;
+    const dataProfile = useRecoilValue(ProfileState).data;
 
-    const dataProfile = _data;
-    const setDataProfile = (data: any) => {
-        Object.assign(dataProfile, { ...data });
-        _setData({ ...dataProfile });
+    const dataRequest = _data;
+    const setDataRequest = (data: any) => {
+        Object.assign(dataRequest, { ...data });
+        _setData({ ...dataRequest });
     };
 
     const isValidData = () => {
@@ -86,13 +55,51 @@ const MissionScreen = () => {
         return allRequestOK;
     };
 
-    const bottomSheetRef = useRef<BottomSheet>(null);
-
-    const addOrUpdateTask = () => {
-        bottomSheetRef.current?.close();
+    const GetMissonAsync = async () => {
+        try {
+            await missionService.getMission(
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    setListMission(response.content)
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
     };
 
-    const snapPoints = useMemo(() => ['50%', '90%'], []);
+    useEffect(() => {
+        GetMissonAsync().then(() => { });
+    }, []);
+
+    const bottomSheetRef = useRef<BottomSheet>(null);
+
+    const addOrUpdateTask = async () => {
+        if (isValidData()) {
+            try {
+                await missionService.createMission(
+                    {
+                        "childId": dataRequest.childId,
+                        "title": dataRequest.title,
+                        "description": dataRequest.description,
+                        "deadline": dataRequest.deadline,
+                        "points": Number(dataRequest.points),
+                    },
+                    setLoading,
+                ).then((response) => {
+                    if (response) {
+                        GetMissonAsync()
+                        bottomSheetRef.current?.close();
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    };
+
+    const snapPoints = useMemo(() => ['90%'], []);
 
     const handleSheetChanges = useCallback((index: number) => {
         if (index === -1) {
@@ -111,108 +118,159 @@ const MissionScreen = () => {
     const deleteTask = (id: string) => {
         Alert.alert('Xác nhận', 'Bạn muốn xóa nhiệm vụ này?', [
             { text: 'Hủy' },
-            { text: 'Xóa', onPress: () => setTasks(tasks.filter((task) => task.id !== id)) },
+            { text: 'Xóa', onPress: () => { } },
         ]);
     };
 
-    const editTask = (task: Task) => {
+    const editTask = (task: any) => {
         setEditingId(task.id);
         openSheet();
     };
 
-    const toggleComplete = (id: string) => {
-        setTasks((prev) =>
-            prev.map((task) =>
-                task.id === id ? { ...task, completed: !task.completed } : task
-            )
-        );
+    const toggleComplete = (item: any) => {
+        Alert.alert('Xác nhận', 'Bạn đã hoàn thành nhiệm vụ này?', [
+            { text: 'Hủy' },
+            { text: 'Hoàn thành', onPress: () => { } },
+        ]);
     };
 
-    const renderItem = ({ item }: { item: Task }) => (
+    const renderItem = ({ item }: { item: any }) => (
         <View style={styles.taskItem}>
             <TouchableOpacity onPress={() => toggleComplete(item.id)}>
                 <Text style={[styles.taskTitle, item.completed && styles.completed]}>
                     {item.title}
                 </Text>
-                <Text style={styles.deadline}>Hạn: {item.deadline}</Text>
+                <Text style={styles.deadline}>Hạn: {convertDate(item.deadline)}</Text>
             </TouchableOpacity>
-            <View style={styles.actions}>
-                <TouchableOpacity onPress={() => editTask(item)} style={styles.button}>
-                    <Text style={styles.buttonText}>Sửa</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteTask(item.id)} style={styles.button}>
-                    <Text style={[styles.buttonText, { color: '#ff1111' }]}>Xóa</Text>
-                </TouchableOpacity>
-            </View>
+            {
+                dataProfile?.role === "child"
+                    ?
+                    <View style={styles.actions}>
+                        <TouchableOpacity onPress={() => toggleComplete(item)} style={styles.button}>
+                            <Text style={styles.buttonText}>Hoàn thành</Text>
+                        </TouchableOpacity>
+                    </View>
+                    :
+                    <View style={styles.actions}>
+                        <TouchableOpacity onPress={() => editTask(item)} style={styles.button}>
+                            <Text style={styles.buttonText}>Sửa</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => deleteTask(item.id)} style={styles.button}>
+                            <Text style={[styles.buttonText, { color: '#ff1111' }]}>Xóa</Text>
+                        </TouchableOpacity>
+                    </View>
+            }
+
         </View>
     );
+    console.log("dataRequest", dataRequest.role);
 
     return (
-        <MainLayout title={'Quản lý nhiệm vụ'}>
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.headerText}>Nhiệm vụ của trẻ</Text>
-                    <TouchableOpacity onPress={openSheet}>
-                        <Icon name={'plus-circle'} size={22} color="#4f3f97" />
-                    </TouchableOpacity>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1 }}
+        >
+            <MainLayout title={'Quản lý nhiệm vụ'}>
+                <View style={styles.container}>
+                    <View style={styles.header}>
+                        <Text style={styles.headerText}>Nhiệm vụ của trẻ</Text>
+                        <TouchableOpacity onPress={openSheet}>
+                            <Icon name={'plus-circle'} size={22} color="#4f3f97" />
+                        </TouchableOpacity>
+                    </View>
+                    <FlatList
+                        data={listMission}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.id}
+                        ListEmptyComponent={<Text style={styles.empty}>Chưa có nhiệm vụ nào</Text>}
+                        contentContainerStyle={styles.listContent}
+                    />
                 </View>
-                <FlatList
-                    data={tasks}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
-                    ListEmptyComponent={<Text style={styles.empty}>Chưa có nhiệm vụ nào</Text>}
-                    contentContainerStyle={styles.listContent}
-                />
+                <LoadingFullScreen loading={loading} />
+            </MainLayout>
+            <BottomSheet
+                ref={bottomSheetRef}
+                index={-1}
+                snapPoints={snapPoints}
+                onChange={handleSheetChanges}
+                enablePanDownToClose={true}
+                style={styles.bottomSheet}
+                keyboardBehavior="interactive"
+                keyboardBlurBehavior="restore"
+            >
+                <BottomSheetView style={styles.bottomSheetContent}>
+                    <Text style={styles.sheetTitle}>
+                        {editingId ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}
+                    </Text>
+                    <InputTextCommon
+                        label={"Tên nhiệm vụ"}
+                        attribute={"title"}
+                        dataAttribute={dataRequest.title}
+                        isRequired={false}
+                        setData={setDataRequest}
+                        editable={true}
+                        validate={validate}
+                        setValidate={setValidate}
+                        submittedTime={submittedTime}
+                    />
+                    <InputTextCommon
+                        label={"Mô tả"}
+                        attribute={"description"}
+                        dataAttribute={dataRequest.description}
+                        isRequired={false}
+                        setData={setDataRequest}
+                        editable={true}
+                        validate={validate}
+                        setValidate={setValidate}
+                        submittedTime={submittedTime}
+                    />
+                    <InputTextCommon
+                        label={"Điểm"}
+                        attribute={"points"}
+                        dataAttribute={dataRequest.points}
+                        isRequired={false}
+                        setData={setDataRequest}
+                        editable={true}
+                        validate={validate}
+                        setValidate={setValidate}
+                        submittedTime={submittedTime}
+                    />
+                    <InputDatePickerCommon
+                        label="Thời hạn"
+                        attribute="deadline"
+                        dataAttribute={dataRequest.deadline}
+                        setData={setDataRequest}
+                        isRequired
+                        editable
+                        validate={validate}
+                        setValidate={setValidate}
+                        submittedTime={submittedTime}
+                    />
+                    <SelectCommon
+                        label="Trẻ em"
+                        attribute="childId"
+                        dataAttribute={dataRequest.childId}
+                        setData={setDataRequest}
+                        isRequired
+                        validate={validate}
+                        setValidate={setValidate}
+                        submittedTime={submittedTime}
+                        listArray={dataChildren}
+                    />
+                    <ButtonCommon
+                        title={editingId ? 'Cập nhật' : 'Thêm mới'}
+                        onPress={addOrUpdateTask}
+                    />
 
-                <BottomSheet
-                    ref={bottomSheetRef}
-                    index={-1}
-                    snapPoints={snapPoints}
-                    onChange={handleSheetChanges}
-                    enablePanDownToClose={true}
-                    style={styles.bottomSheet}
-                >
-                    <BottomSheetView style={styles.bottomSheetContent}>
-                        <Text style={styles.sheetTitle}>
-                            {editingId ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}
-                        </Text>
-                        <InputTextCommon
-                            label={"Tên đăng nhập"}
-                            attribute={"username"}
-                            dataAttribute={dataProfile.username}
-                            isRequired={false}
-                            setData={setDataProfile}
-                            editable={true}
-                            validate={validate}
-                            setValidate={setValidate}
-                            submittedTime={submittedTime}
-                        />
-                        <InputTextCommon
-                            label={"Tên đăng nhập"}
-                            attribute={"username"}
-                            dataAttribute={dataProfile.username}
-                            isRequired={false}
-                            setData={setDataProfile}
-                            editable={true}
-                            validate={validate}
-                            setValidate={setValidate}
-                            submittedTime={submittedTime}
-                        />
-                        <ButtonCommon
-                            title={editingId ? 'Cập nhật' : 'Thêm mới'}
-                            onPress={addOrUpdateTask}
-                        />
+                    <ButtonCommon
+                        title={'Đóng'}
+                        onPress={closeSheet}
+                    />
 
-                        <ButtonCommon
-                            title={'Đóng'}
-                            onPress={closeSheet}
-                        />
-
-                    </BottomSheetView>
-                </BottomSheet>
-            </View>
+                </BottomSheetView>
+            </BottomSheet>
             <LoadingFullScreen loading={loading} />
-        </MainLayout>
+        </KeyboardAvoidingView>
     )
 }
 
