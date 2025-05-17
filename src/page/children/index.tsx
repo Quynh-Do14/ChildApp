@@ -95,8 +95,11 @@ const ChildrenScreen = () => {
         }
         bottomSheetRef.current?.expand();
     };
-
-    const closeSheet = () => bottomSheetRef.current?.close();
+    
+    const closeSheet = () => {
+        bottomSheetRef.current?.close();
+        setEditingId(null);
+    };
 
     const handleDelete = (id: string) => {
         Alert.alert('Xoá trẻ', 'Bạn có chắc muốn xoá trẻ này?', [
