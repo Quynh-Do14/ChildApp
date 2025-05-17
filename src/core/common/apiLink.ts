@@ -41,5 +41,6 @@ export class Endpoint {
     static Notification = class {
         static RegisterToken = "/device-tokens/register"
         static UnregisterToken = "/device-tokens/unregister"
+        static RegisterTokenEmail = "/device-tokens/register-email"
     }
 };

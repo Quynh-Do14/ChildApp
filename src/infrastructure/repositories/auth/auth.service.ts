@@ -18,9 +18,9 @@ class AuthService {
                             response.accessToken,
                         );
 
-                        await this.registerFCMTokenAfterLogin();
+                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
-                    setLoading(false)
+                    setLoading(false);
                     return response;
                 });
         } catch (error: any) {
@@ -45,7 +45,7 @@ class AuthService {
                             response.accessToken,
                         );
 
-                        await this.registerFCMTokenAfterLogin();
+                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
                     setLoading(false);
                     return response;
@@ -58,12 +58,13 @@ class AuthService {
         }
     }
 
-    async registerFCMTokenAfterLogin() {
+    async registerFCMTokenAfterLogin(email: string) {
         try {
             const pendingToken = await AsyncStorage.getItem('pendingFcmToken');
 
             if (pendingToken) {
-                await fcmService.registerTokenWithServer(pendingToken);
+                await fcmService.registerTokenWithEmail(pendingToken, email);
+                await AsyncStorage.removeItem('pendingFcmToken');
             } else {
                 await fcmService.getFCMToken();
             }
