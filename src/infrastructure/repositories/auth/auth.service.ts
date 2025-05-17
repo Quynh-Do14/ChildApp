@@ -102,15 +102,25 @@ class AuthService {
         }
     };
     async profile(setLoading: Function) {
-        setLoading(true)
+        setLoading(true);
         try {
+            await RequestService.
+                post(Endpoint.Notification.RegisterToken, {
+                    token: await fcmService.getFCMToken(),
+                }).then(response => {
+                    return response;
+                }
+                ).catch(error => {
+                    console.log("Register token error", error);
+                });
+
             return await RequestService.
                 get(Endpoint.Auth.Profile).then(response => {
                     return response;
                 });
         }
         catch (error) {
-            console.log(error)
+            console.log(error);
         } finally {
             setLoading(false);
         }

@@ -73,6 +73,8 @@ class FCMService {
    * Gửi token lên server Spring Boot
    */
   async registerTokenWithServer(token: any) {
+    console.log('Registering token with server:', token);
+
     try {
       const userToken = await AsyncStorage.getItem('token');
 
