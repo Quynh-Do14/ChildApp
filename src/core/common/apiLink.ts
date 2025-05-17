@@ -38,4 +38,9 @@ export class Endpoint {
         static Update = "/api/guardians"
         static Delete = "/api/guardians"
     }
+    static Notification = class {
+        static RegisterToken = "/device-tokens/register"
+        static UnregisterToken = "/device-tokens/unregister"
+        static RegisterTokenEmail = "/device-tokens/register-email"
+    }
 };

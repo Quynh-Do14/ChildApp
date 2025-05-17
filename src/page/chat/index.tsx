@@ -85,10 +85,10 @@ const ChatListScreen = ({ navigation }: any) => {
             </View>
         </MainLayout>
 
-    )
-}
+    );
+};
 
-export default ChatListScreen
+export default ChatListScreen;
 
 const styles = StyleSheet.create({
     container: {

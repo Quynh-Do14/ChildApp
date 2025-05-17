@@ -2,6 +2,8 @@ import { Endpoint } from "../../../core/common/apiLink";
 import { Alert } from "react-native";
 import { RequestService } from "../../utils/response";
 import { clearStorage, saveToken } from "../../utils/storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import fcmService from "../fcm/fcmService";
 class AuthService {
     async login(data: object, setLoading: Function) {
         setLoading(true);
@@ -10,13 +12,15 @@ class AuthService {
                 .post(Endpoint.Auth.Login,
                     data
                 )
-                .then(response => {
+                .then(async response => {
                     if (response) {
-                        saveToken(
+                        await saveToken(
                             response.accessToken,
                         );
+
+                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
-                    setLoading(false)
+                    setLoading(false);
                     return response;
                 });
         } catch (error: any) {
@@ -35,13 +39,15 @@ class AuthService {
                 .post(`${Endpoint.Auth.OTP}/${otp}`,
                     {}
                 )
-                .then(response => {
+                .then(async response => {
                     if (response) {
-                        saveToken(
+                        await saveToken(
                             response.accessToken,
                         );
+
+                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
-                    setLoading(false)
+                    setLoading(false);
                     return response;
                 });
         } catch (error: any) {
@@ -52,16 +58,32 @@ class AuthService {
         }
     }
 
+    async registerFCMTokenAfterLogin(email: string) {
+        try {
+            const pendingToken = await AsyncStorage.getItem('pendingFcmToken');
+
+            if (pendingToken) {
+                await fcmService.registerTokenWithEmail(pendingToken, email);
+                await AsyncStorage.removeItem('pendingFcmToken');
+            } else {
+                await fcmService.getFCMToken();
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     async logout(setLoading: Function) {
         setLoading(true)
         try {
-            clearStorage()
+            await fcmService.deleteToken();
+            clearStorage();
         } catch (error) {
-            console.log(error)
+            console.log(error);
         } finally {
-            setLoading(false)
-        };
-    };
+            setLoading(false);
+        }
+    }
 
     async register(data: any, setLoading: Function) {
         setLoading(true)
@@ -80,15 +102,25 @@ class AuthService {
         }
     };
     async profile(setLoading: Function) {
-        setLoading(true)
+        setLoading(true);
         try {
+            await RequestService.
+                post(Endpoint.Notification.RegisterToken, {
+                    token: await fcmService.getFCMToken(),
+                }).then(response => {
+                    return response;
+                }
+                ).catch(error => {
+                    console.log("Register token error", error);
+                });
+
             return await RequestService.
                 get(Endpoint.Auth.Profile).then(response => {
                     return response;
                 });
         }
         catch (error) {
-            console.log(error)
+            console.log(error);
         } finally {
             setLoading(false);
         }

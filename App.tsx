@@ -1,10 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
@@ -20,6 +13,8 @@ import ChatSlugScreen from './src/page/chat/chatSlug';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RegisterScreen from './src/page/Auth/register';
 import OtpVerificationScreen from './src/page/Auth/veriify-otp';
+import fcmService from './src/infrastructure/repositories/fcm/fcmService';
+import InAppNotification from './src/page/notification/InAppNotification';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -45,7 +40,7 @@ const StackNavigator = () => {
   useEffect(() => {
     checkToken();
   }, []);
-  // if (initialRoute) {
+
   return (
     <Stack.Navigator
       initialRouteName={"LoginScreen"}
@@ -65,16 +60,85 @@ const StackNavigator = () => {
       <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
     </Stack.Navigator>
   );
-  // }
 };
 
-
 function App(): React.JSX.Element {
+  // Sử dụng một state duy nhất để theo dõi thông báo hiện tại
+  const [notification, setNotification] = useState<any>(null);
+
+  // Tham chiếu đến đối tượng NavigationContainer
+  const navigationRef = React.useRef(null);
+
+  useEffect(() => {
+    // Khởi tạo FCM khi app khởi động
+    const initFCM = async () => {
+      try {
+        // Yêu cầu quyền
+        const hasPermission = await fcmService.requestUserPermission();
+
+        if (hasPermission) {
+          // Lấy và đăng ký token
+          const token = await fcmService.getFCMToken();
+          console.log('FCM token in App.js:', token);
+
+          // Thiết lập lắng nghe thông báo - CHỈ THIẾT LẬP MỘT LẦN
+          const unsubscribe = fcmService.setupMessageListeners((remoteMessage: any) => {
+            console.log('Notification received in App.js:', remoteMessage);
+
+            if (remoteMessage.notification) {
+              // Hiển thị thông báo tùy chỉnh thay vì Alert
+              setNotification({
+                title: remoteMessage.notification.title || 'Thông báo mới',
+                body: remoteMessage.notification.body || '',
+                data: remoteMessage.data,
+              });
+
+              // Xử lý điều hướng nếu cần
+              if (remoteMessage.data && remoteMessage.data.screen && navigationRef.current) {
+                // Sử dụng navigationRef để điều hướng
+                // @ts-ignore
+                navigationRef.current.navigate(remoteMessage.data.screen, remoteMessage.data.params);
+                console.log('Navigating to:', remoteMessage.data.screen);
+              }
+            }
+          });
+
+          // Thiết lập lắng nghe token refresh
+          const unsubscribeTokenRefresh = fcmService.setupTokenRefresh();
+
+          // Dọn dẹp khi unmount
+          return () => {
+            unsubscribe && unsubscribe();
+            unsubscribeTokenRefresh && unsubscribeTokenRefresh();
+          };
+        }
+      } catch (error) {
+        console.log('FCM initialization error:', error);
+      }
+    };
+
+    initFCM();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <RecoilRoot>
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <StackNavigator />
+          {notification && (
+            <InAppNotification
+              title={notification.title}
+              message={notification.body}
+              onPress={() => {
+                // Xử lý khi nhấn vào thông báo
+                if (notification.data && notification.data.screen && navigationRef.current) {
+                  // @ts-ignore
+                  navigationRef.current.navigate(notification.data.screen, notification.data.params);
+                }
+              }}
+              onClose={() => setNotification(null)}
+            />
+          )}
         </NavigationContainer>
       </RecoilRoot>
     </GestureHandlerRootView>
