@@ -8,15 +8,15 @@ interface InAppNotificationProps {
     onClose?: () => void;
 }
 
-const InAppNotification: React.FC<InAppNotificationProps> = ({ 
-    title, 
-    message, 
-    onPress, 
-    onClose 
+const InAppNotification: React.FC<InAppNotificationProps> = ({
+    title,
+    message,
+    onPress,
+    onClose
 }) => {
     // Sử dụng useRef để lưu trữ animate value
     const translateYRef = useRef(new Animated.Value(-100));
-    
+
     // Sử dụng callback để tạo một hàm ổn định
     const hideNotification = useCallback(() => {
         Animated.timing(translateYRef.current, {

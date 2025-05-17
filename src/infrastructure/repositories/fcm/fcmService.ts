@@ -18,7 +18,7 @@ class FCMService {
           return false;
         }
       }
-      
+
       // Xử lý quyền cho iOS
       if (Platform.OS === 'ios') {
         const authStatus = await messaging().requestPermission();
@@ -31,7 +31,7 @@ class FCMService {
           return false;
         }
       }
-      
+
       return true;
     } catch (error) {
       console.log('Permission request error:', error);
@@ -46,11 +46,11 @@ class FCMService {
     try {
       // Kiểm tra token đã lưu
       let fcmToken = await AsyncStorage.getItem('fcmToken');
-      
+
       if (!fcmToken) {
         // Yêu cầu token mới
         fcmToken = await messaging().getToken();
-        
+
         if (fcmToken) {
           console.log('FCM Token:', fcmToken);
           await AsyncStorage.setItem('fcmToken', fcmToken);
@@ -60,7 +60,7 @@ class FCMService {
         console.log('Token already exists:', fcmToken);
         await this.registerTokenWithServer(fcmToken);
       }
-      
+
       return fcmToken;
     } catch (error) {
       console.log('Error getting FCM token:', error);
@@ -81,25 +81,22 @@ class FCMService {
           // Thêm headers xác thực nếu cần
           // 'Authorization': 'Bearer ' + userToken,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           token: token,
           // Thêm thông tin khác nếu cần
           deviceType: Platform.OS,
-          // userId: currentUserId,
-        })
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Server response was not ok');
       }
-      
+
       const result = await response.json();
       console.log('Token registration result:', result);
       return result;
     } catch (error) {
       console.log('Error registering token with server:', error);
-      // Thử lại sau nếu cần
-      // setTimeout(() => this.registerTokenWithServer(token), 5000);
     }
   }
 
@@ -135,14 +132,14 @@ class FCMService {
       // Không thể trực tiếp gọi onNotificationReceived vì code JS không chạy ở background
       return Promise.resolve();
     });
-    
+
     // Trả về hàm để hủy đăng ký khi cần
     return () => {
       unsubscribeForeground();
       unsubscribeBackground();
     };
   }
-  
+
   /**
    * Xử lý khi token được làm mới
    */
@@ -153,7 +150,7 @@ class FCMService {
       await this.registerTokenWithServer(token);
     });
   }
-  
+
   /**
    * Xóa FCM token khi logout
    */
