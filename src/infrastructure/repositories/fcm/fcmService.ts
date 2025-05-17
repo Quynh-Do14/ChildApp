@@ -1,6 +1,7 @@
 import messaging from '@react-native-firebase/messaging';
 import { Platform, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Endpoint } from '../../../core/common/apiLink';
 
 class FCMService {
   /**
@@ -73,18 +74,25 @@ class FCMService {
    */
   async registerTokenWithServer(token: any) {
     try {
+      const userToken = await AsyncStorage.getItem('token');
+
+      if (!userToken) {
+        await AsyncStorage.setItem('pendingFcmToken', token);
+        return;
+      }
+
       // Thay thế URL này với endpoint của Spring Boot của bạn
-      const response = await fetch('https://6a0d-113-23-42-13.ngrok-free.app/device-tokens/register', {
+      const response = await fetch(Endpoint.Notification.RegisterToken, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           // Thêm headers xác thực nếu cần
-          // 'Authorization': 'Bearer ' + userToken,
+          'Authorization': `Bearer ${userToken}`,
         },
         body: JSON.stringify({
           token: token,
-          // Thêm thông tin khác nếu cần
-          deviceType: Platform.OS,
+          deviceName: Platform.OS === 'ios' ? 'iOS' : 'Android',
+          deviceModel: Platform.Version,
         }),
       });
 
@@ -94,6 +102,8 @@ class FCMService {
 
       const result = await response.json();
       console.log('Token registration result:', result);
+
+      await AsyncStorage.removeItem('pendingFcmToken');
       return result;
     } catch (error) {
       console.log('Error registering token with server:', error);
@@ -156,7 +166,28 @@ class FCMService {
    */
   async deleteToken() {
     try {
+      const fcmToken = await AsyncStorage.getItem('fcmToken');
+      const userToken = await AsyncStorage.getItem('token');
+
+      if (fcmToken && userToken) {
+        try {
+          await fetch(Endpoint.Notification.UnregisterToken, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userToken}`,
+            },
+            body: JSON.stringify({
+              token: fcmToken,
+            }),
+          });
+        } catch (error) {
+          console.log('Error unregistering FCM token:', error);
+        }
+      }
+
       await AsyncStorage.removeItem('fcmToken');
+      await AsyncStorage.removeItem('pendingFcmToken');
       await messaging().deleteToken();
       console.log('FCM token deleted');
       return true;

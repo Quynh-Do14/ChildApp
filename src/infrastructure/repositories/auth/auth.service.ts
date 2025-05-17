@@ -2,6 +2,8 @@ import { Endpoint } from "../../../core/common/apiLink";
 import { Alert } from "react-native";
 import { RequestService } from "../../utils/response";
 import { clearStorage, saveToken } from "../../utils/storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import fcmService from "../fcm/fcmService";
 class AuthService {
     async login(data: object, setLoading: Function) {
         setLoading(true);
@@ -10,11 +12,13 @@ class AuthService {
                 .post(Endpoint.Auth.Login,
                     data
                 )
-                .then(response => {
+                .then(async response => {
                     if (response) {
-                        saveToken(
+                        await saveToken(
                             response.accessToken,
                         );
+
+                        await this.registerFCMTokenAfterLogin();
                     }
                     setLoading(false)
                     return response;
@@ -35,13 +39,15 @@ class AuthService {
                 .post(`${Endpoint.Auth.OTP}/${otp}`,
                     {}
                 )
-                .then(response => {
+                .then(async response => {
                     if (response) {
-                        saveToken(
+                        await saveToken(
                             response.accessToken,
                         );
+
+                        await this.registerFCMTokenAfterLogin();
                     }
-                    setLoading(false)
+                    setLoading(false);
                     return response;
                 });
         } catch (error: any) {
@@ -52,16 +58,31 @@ class AuthService {
         }
     }
 
+    async registerFCMTokenAfterLogin() {
+        try {
+            const pendingToken = await AsyncStorage.getItem('pendingFcmToken');
+
+            if (pendingToken) {
+                await fcmService.registerTokenWithServer(pendingToken);
+            } else {
+                await fcmService.getFCMToken();
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     async logout(setLoading: Function) {
         setLoading(true)
         try {
-            clearStorage()
+            await fcmService.deleteToken();
+            clearStorage();
         } catch (error) {
-            console.log(error)
+            console.log(error);
         } finally {
-            setLoading(false)
-        };
-    };
+            setLoading(false);
+        }
+    }
 
     async register(data: any, setLoading: Function) {
         setLoading(true)
