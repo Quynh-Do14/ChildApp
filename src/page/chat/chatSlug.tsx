@@ -1,37 +1,106 @@
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react'
-import MainLayout from '../../infrastructure/common/layouts/layout'
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    FlatList,
+    StyleSheet,
+    Keyboard,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback,
+} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import MainLayout from '../../infrastructure/common/layouts/layout';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import conversationService from '../../infrastructure/repositories/conversation/conversation.service';
-
-
-
+import { Client } from '@stomp/stompjs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ChatSlugScreen = () => {
     const [inputText, setInputText] = useState('');
     const navigation = useNavigation<any>();
+
+    const [chatLog, setChatLog] = useState<any[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+
+    const [token, setToken] = useState<string>('');
+
     const route = useRoute();
     const { chatId, receiverId, name } = route.params;
 
-    const flatListRef = useRef<FlatList>(null);
+    const getTokenStoraged = async () => {
+        const storedToken = await AsyncStorage.getItem('token');
+        if (storedToken) {
+            setToken(storedToken);
+        }
+    };
 
-    const [loading, setLoading] = useState<boolean>(false);
-    const [chatLog, setChatLog] = useState<any[]>([]);
+    useEffect(() => {
+        getTokenStoraged();
+    }, []);
+
+    const flatListRef = useRef<FlatList>(null);
+    const stompClientRef = useRef<Client | null>(null);
+
+
 
     const GetMyChatLogAsync = async () => {
         try {
-            await conversationService.GetChatLogById(
+            const response = await conversationService.GetChatLogById(
                 String(chatId),
                 setLoading,
-            ).then((response) => {
-                if (response) {
-                    setChatLog(response)
-                }
-            });
+            );
+            if (response) {
+                setChatLog(response);
+                scrollToBottom();
+            }
         } catch (error) {
             console.error(error);
         }
-    }
+    };
+
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+    };
+
+    // useEffect(() => {
+    //     const baseURL = 'http://192.168.100.79:8080';
+    //     const wsUrl = `${baseURL.replace('http', 'ws')}/ws?token=${token}`;
+
+    //     const client = new Client({
+    //         brokerURL: wsUrl,
+    //         connectHeaders: {
+    //             Authorization: `Bearer ${token}`,
+    //         },
+    //         debug: (str) => {
+    //             console.log('🟣 STOMP Debug:', str);
+    //         },
+    //         reconnectDelay: 5000,
+    //         onConnect: (frame) => {
+    //             console.log('✅ STOMP connected:', frame);
+
+    //             // Lắng nghe thông điệp riêng
+    //             client.subscribe('/user/queue/chat', (message) => {
+    //                 console.log('📩 Nhận được message:', message.body);
+    //                 // Gọi lại các hàm cần reload
+    //                 GetMyChatLogAsync();
+    //             });
+    //         },
+    //         onStompError: (frame) => {
+    //             console.error('❌ STOMP error:', frame.headers['message']);
+    //         },
+    //     });
+
+    //     client.activate();
+    //     stompClientRef.current = client;
+
+    //     return () => {
+    //         client.deactivate();
+    //     };
+    // }, []);
+
     useEffect(() => {
         GetMyChatLogAsync().then(() => { });
     }, [])
@@ -66,7 +135,7 @@ const ChatSlugScreen = () => {
     };
 
     const renderItem = ({ item }: any) => {
-        const isSender = item.sender == null ? false : true
+        const isSender = item.sender == null ? false : true;
         return (
             <View
                 style={[
@@ -91,11 +160,11 @@ const ChatSlugScreen = () => {
                     ref={flatListRef}
                     data={chatLog}
                     renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item, index) => item.id || index.toString()}
                     contentContainerStyle={styles.chatContainer}
-                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                    onContentSizeChange={scrollToBottom}
                 />
-                <KeyboardAvoidingView behavior='padding'>
+                <KeyboardAvoidingView behavior="padding">
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.inputContainer}>
                             <TextInput
@@ -104,7 +173,7 @@ const ChatSlugScreen = () => {
                                 onChangeText={setInputText}
                                 placeholder="Nhập tin nhắn..."
                                 onSubmitEditing={handleSend}
-                                returnKeyType='send'
+                                returnKeyType="send"
                             />
                             <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
                                 <Text style={styles.sendText}>Gửi</Text>
@@ -112,14 +181,12 @@ const ChatSlugScreen = () => {
                         </View>
                     </TouchableWithoutFeedback>
                 </KeyboardAvoidingView>
-
             </View>
-        </MainLayout >
+        </MainLayout>
+    );
+};
 
-    )
-}
-
-export default ChatSlugScreen
+export default ChatSlugScreen;
 
 const styles = StyleSheet.create({
     container: {

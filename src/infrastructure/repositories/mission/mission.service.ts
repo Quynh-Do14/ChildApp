@@ -1,13 +1,12 @@
 import { Endpoint } from "../../../core/common/apiLink";
 import { RequestService } from "../../utils/response";
 
-class GradeService {
-    async getGrade(setLoading: Function) {
+class MissionService {
+    async getMission(setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.Grade.GetGPA,
-                    {}
+                get(Endpoint.Mission.Get,
                 ).then(response => {
                     return response;
                 });
@@ -18,12 +17,12 @@ class GradeService {
             setLoading(false);
         }
     }
-    async getGradeByUser(setLoading: Function) {
+    async createMission(data: any, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(`${Endpoint.Grade.GetGradeByUser}`,
-                    {}
+                post(Endpoint.Mission.Create,
+                    data
                 ).then(response => {
                     return response;
                 });
@@ -34,13 +33,27 @@ class GradeService {
             setLoading(false);
         }
     }
-
-    async getGradeByCoures(id: string, setLoading: Function) {
+    async updateMission(id: string, data: any, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(`${Endpoint.Grade.GetGradeByCourse}/${id}`,
-                    {}
+                put(`${Endpoint.Mission.Update}/${id}`,
+                    data
+                ).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
+    async deleteMission(id: string, setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.
+                delete(`${Endpoint.Mission.Delete}/${id}`,
                 ).then(response => {
                     return response;
                 });
@@ -53,4 +66,4 @@ class GradeService {
     }
 }
 
-export default new GradeService();
+export default new MissionService();

@@ -140,14 +140,6 @@ const styles = StyleSheet.create({
         borderBottomColor: "#ABABAB",
         marginBottom: 4,
     },
-    btnStyle: {
-        backgroundColor: "#D0FD3E",
-        paddingVertical: 16,
-        borderRadius: 50,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center"
-    },
     errorStyle: {
         borderBottomColor: "#f61a1a",
     },

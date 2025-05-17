@@ -46,8 +46,8 @@ const EditProfile = () => {
             </View>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.label}>Tên đăng nhập</Text>
-            <Text style={[styles.value, styles.linkColor]}>{dataProfile.username}</Text>
+            <Text style={styles.label}>Tên</Text>
+            <Text style={[styles.value, styles.linkColor]}>{dataProfile.name}</Text>
           </View>
 
           <View style={styles.infoRow}>

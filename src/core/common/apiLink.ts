@@ -1,6 +1,7 @@
 export class Endpoint {
     static Auth = class {
         static Login = "/auth/login"
+        static OTP = "/auth/child/login"
         static Signup = "/auth/signup"
         static Profile = "/users/profile"
         static UpdateProfile = "/students/me"
@@ -13,24 +14,28 @@ export class Endpoint {
         static SendMessage = "/conversations/send-message"
         static ChatLog = "/conversations/chatlogs"
     }
-
-    static Exam = class {
-        static Get = "/v1/exams/search"
+    static User = class {
+        static MyChild = "/users/my-children"
+        static GetChildById = "/api/children"
+        static MyParent = "/users/my-parent"
+        static Create = "/api/children"
+        static Update = "/api/children"
+        static Delete = "/api/children"
     }
-    static Schedule = class {
-        static Get = "/v1/schedules"
-        static GetById = "/v1/schedules/studentId"
+    static Mission = class {
+        static Get = "/missions/my-missions"
+        static GetById = "/missions/get"
+        static Create = "/missions/parent/create"
+        static Update = "/missions/parent/update"
+        static Complete = "/missions/child/complete"
+        static Confirm = "/missions/parent/confirm"
+        static Delete = "/missions/parent/delete"
     }
-    static Enrollment = class {
-        static Get = "/v1/enrollment"
-        static Create = "/v1/enrollment"
-    }
-    static CourseClass = class {
-        static Get = "/v1/courseClass"
-    }
-    static Grade = class {
-        static GetGPA = "/v1/grades/total"
-        static GetGradeByUser = "/v1/grades/userId"
-        static GetGradeByCourse = "/v1/grades/courseId"
+    static Inspector = class {
+        static Get = "/api/guardians"
+        static GetById = "/api/guardians"
+        static Create = "/api/guardians"
+        static Update = "/api/guardians"
+        static Delete = "/api/guardians"
     }
 };

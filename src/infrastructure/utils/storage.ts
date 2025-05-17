@@ -4,9 +4,13 @@ export const clearToken = async () => {
   await AsyncStorage.removeItem("token");
 };
 export const clearStorage = async () => {
-  await AsyncStorage.clear();
+  try {
+    await AsyncStorage.clear();
+    console.log('Storage cleared successfully');
+  } catch (e) {
+    console.error('Error clearing AsyncStorage:', e);
+  }
 };
-
 export const isTokenStoraged = async () => {
   const token = await AsyncStorage.getItem("token").then(result => {
     return result

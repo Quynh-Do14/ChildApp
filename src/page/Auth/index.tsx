@@ -36,33 +36,33 @@ const LoginScreen = () => {
     };
     const onLoginAsync = async () => {
         await setSubmittedTime(Date.now());
-        // if (isValidData()) {
-        try {
-            await authService.login(
-                {
-                    email: dataProfile.email,
-                    password: dataProfile.password,
-                },
-                // {
-                //     email: "admin2@gmail.com",
-                //     password: "12345678",
-                // },
-                setLoading,
-            ).then((response) => {
-                if (response) {
-                    setDataProfile(
-                        {
-                            username: "",
-                            password: "",
-                        },
-                    )
-                    navigation.replace('DrawerMenu');
-                }
-            });
-        } catch (error) {
-            console.error(error);
+        if (isValidData()) {
+            try {
+                await authService.login(
+                    {
+                        email: dataProfile.email,
+                        password: dataProfile.password,
+                    },
+                    // {
+                    //     email: "quynhdo@gmail.com",
+                    //     password: "123456",
+                    // },
+                    setLoading,
+                ).then((response) => {
+                    if (response) {
+                        setDataProfile(
+                            {
+                                username: "",
+                                password: "",
+                            },
+                        )
+                        navigation.replace('DrawerMenu');
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+            }
         }
-        // }
     }
 
     return (
@@ -136,6 +136,13 @@ const LoginScreen = () => {
                                     </TouchableOpacity>
                                 </View>
                                 <ButtonCommon title="Đăng Nhập" onPress={onLoginAsync} />
+                                <View style={styles.row}>
+                                    <TouchableOpacity
+                                        onPress={() => navigation.navigate("OtpVerificationScreen")}
+                                    >
+                                        <Text style={styles.forgotPassword}>Đăng nhập bằng mã OTP</Text>
+                                    </TouchableOpacity>
+                                </View>
                                 <View style={styles.row}>
                                     <TouchableOpacity
                                         onPress={() => navigation.navigate("RegisterScreen")}
