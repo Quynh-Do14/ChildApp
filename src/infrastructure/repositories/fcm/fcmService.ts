@@ -78,6 +78,9 @@ class FCMService {
 
       if (!userToken) {
         await AsyncStorage.setItem('pendingFcmToken', token);
+
+        console.log('User token not found, saving pending FCM token:', token);
+
         return;
       }
 
