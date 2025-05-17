@@ -114,6 +114,7 @@ class FCMService {
   }
 
   async registerTokenWithEmail(token: any, email: string) {
+    console.log('Registering token with email:', token, email);
     try {
       // Thay thế URL này với endpoint của Spring Boot của bạn
       const response = await fetch(Endpoint.Notification.RegisterTokenEmail, {
@@ -124,8 +125,8 @@ class FCMService {
         },
         body: JSON.stringify({
           token: token,
-          deviceName: Platform.OS === 'ios' ? 'iOS' : 'Android',
-          deviceModel: Platform.Version,
+          // deviceName: Platform.OS === 'ios' ? 'iOS' : 'Android',
+          // deviceModel: Platform.Version,
           email: email,
         }),
       });
@@ -140,7 +141,7 @@ class FCMService {
       await AsyncStorage.removeItem('pendingFcmToken');
       return result;
     } catch (error) {
-      console.log('Error registering token with server:', error);
+      console.log('Error registering token with email:', error);
     }
   }
 

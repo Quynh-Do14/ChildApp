@@ -40,7 +40,7 @@ const StackNavigator = () => {
   useEffect(() => {
     checkToken();
   }, []);
-  
+
   return (
     <Stack.Navigator
       initialRouteName={"LoginScreen"}
@@ -65,7 +65,7 @@ const StackNavigator = () => {
 function App(): React.JSX.Element {
   // Sử dụng một state duy nhất để theo dõi thông báo hiện tại
   const [notification, setNotification] = useState<any>(null);
-  
+
   // Tham chiếu đến đối tượng NavigationContainer
   const navigationRef = React.useRef(null);
 
@@ -92,7 +92,7 @@ function App(): React.JSX.Element {
                 body: remoteMessage.notification.body || '',
                 data: remoteMessage.data,
               });
-              
+
               // Xử lý điều hướng nếu cần
               if (remoteMessage.data && remoteMessage.data.screen && navigationRef.current) {
                 // Sử dụng navigationRef để điều hướng
