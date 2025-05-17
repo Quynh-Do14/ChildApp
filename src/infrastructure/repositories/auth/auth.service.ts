@@ -17,8 +17,6 @@ class AuthService {
                         await saveToken(
                             response.accessToken,
                         );
-
-                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
                     setLoading(false);
                     return response;
@@ -44,8 +42,6 @@ class AuthService {
                         await saveToken(
                             response.accessToken,
                         );
-
-                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
                     setLoading(false);
                     return response;
@@ -58,12 +54,11 @@ class AuthService {
         }
     }
 
-    async registerFCMTokenAfterLogin(email: string) {
+    async registerFCMTokenAfterLogin() {
         try {
             const pendingToken = await AsyncStorage.getItem('pendingFcmToken');
 
             if (pendingToken) {
-                await fcmService.registerTokenWithEmail(pendingToken, email);
                 await AsyncStorage.removeItem('pendingFcmToken');
             } else {
                 await fcmService.getFCMToken();
@@ -74,7 +69,7 @@ class AuthService {
     }
 
     async logout(setLoading: Function) {
-        setLoading(true)
+        setLoading(true);
         try {
             await fcmService.deleteToken();
             clearStorage();
@@ -86,7 +81,7 @@ class AuthService {
     }
 
     async register(data: any, setLoading: Function) {
-        setLoading(true)
+        setLoading(true);
         try {
             return await RequestService.
                 post(Endpoint.Auth.Signup,
@@ -100,7 +95,7 @@ class AuthService {
         } finally {
             setLoading(false);
         }
-    };
+    }
     async profile(setLoading: Function) {
         setLoading(true);
         try {
