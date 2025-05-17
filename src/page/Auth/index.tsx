@@ -36,40 +36,41 @@ const LoginScreen = () => {
     };
     const onLoginAsync = async () => {
         await setSubmittedTime(Date.now());
-        if (isValidData()) {
-            try {
-                await authService.login(
-                    {
-                        email: dataProfile.email,
-                        password: dataProfile.password,
-                    },
-                    // {
-                    //     email: "quynhdo@gmail.com",
-                    //     password: "123456",
-                    // },
-                    setLoading,
-                ).then((response) => {
-                    if (response) {
-                        setDataProfile(
-                            {
-                                username: "",
-                                password: "",
-                            },
-                        )
-                        navigation.replace('DrawerMenu');
-                    }
-                });
-            } catch (error) {
-                console.error(error);
-            }
+        // if (isValidData()) {
+        try {
+            await authService.login(
+                // {
+                //     email: dataProfile.email,
+                //     password: dataProfile.password,
+                // },
+                {
+                    email: "quynhdo@gmail.com",
+                    password: "123456",
+                },
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    setDataProfile(
+                        {
+                            username: "",
+                            password: "",
+                        },
+                    )
+                    navigation.replace('DrawerMenu');
+                }
+            });
+        } catch (error) {
+            console.error(error);
         }
+        // }
+        //  navigation.replace('DrawerMenu');
     }
 
     return (
         <View style={styles.container}>
             <View style={styles.logo}>
                 <ImageBackground
-                    source={require("../../assets/images/bgLogin.png")}
+                    source={require("../../assets/images/logo.jpg")}
                     style={[
                         styles.backgroundImage,
                         {

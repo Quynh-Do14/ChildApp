@@ -73,27 +73,54 @@ const InspectorScreen = () => {
         GetMyInspectorAsync().then(() => { });
     }, []);
 
+    console.log("editingId", editingId);
 
     const onCreateAsync = async () => {
-        if (isValidData()) {
-            try {
-                await inspectorService.createInspector(
-                    {
-                        "name": dataRequest.name,
-                        "phoneNumber": dataRequest.phoneNumber,
-                        "childrenIds": [dataRequest.childrenIds]
-                    },
-                    setLoading,
-                ).then((response) => {
-                    if (response) {
-                        GetMyInspectorAsync()
-                        bottomSheetRef.current?.close();
-                    }
-                });
-            } catch (error) {
-                console.error(error);
+        if (editingId) {
+            if (isValidData()) {
+                try {
+                    await inspectorService.updateInspector(
+                        String(editingId),
+                        {
+                            "name": dataRequest.name,
+                            "phoneNumber": dataRequest.phoneNumber,
+                            "childrenIds": [dataRequest.childrenIds]
+                        },
+                        setLoading,
+                    ).then((response) => {
+                        if (response) {
+                            console.log("response", response);
+                            GetMyInspectorAsync()
+                            closeSheet();
+                        }
+                    });
+                } catch (error) {
+                    console.log(error);
+                }
             }
         }
+        else {
+            if (isValidData()) {
+                try {
+                    await inspectorService.createInspector(
+                        {
+                            "name": dataRequest.name,
+                            "phoneNumber": dataRequest.phoneNumber,
+                            "childrenIds": [dataRequest.childrenIds]
+                        },
+                        setLoading,
+                    ).then((response) => {
+                        if (response) {
+                            GetMyInspectorAsync()
+                            closeSheet();
+                        }
+                    });
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+        }
+
     };
 
     const bottomSheetRef = useRef<BottomSheet>(null);
@@ -105,7 +132,14 @@ const InspectorScreen = () => {
         }
     }, []);
 
-    const openSheet = () => {
+    const openSheet = (item?: any) => {
+        if (item) {
+            setDataRequest({ ...item });
+            setEditingId(item.id);
+        } else {
+            setDataRequest({});
+            setEditingId(null);
+        }
         bottomSheetRef.current?.expand();
     };
     const closeSheet = () => {
@@ -113,14 +147,35 @@ const InspectorScreen = () => {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Xoá người giám sát', `Bạn có chắc muốn xoá người giám sát này? (ID: ${id})`);
+        setEditingId(id);
+        Alert.alert('Xoá người giám sát', 'Bạn có chắc muốn xoá người giám sát này?', [
+            { text: 'Hủy', style: 'cancel', onPress: () => setEditingId(null) },
+            { text: 'Xóa', onPress: () => onDeleteAsync() },
+        ]);
+        
+
+    };
+
+    const onDeleteAsync = async () => {
+        try {
+            await inspectorService.deleteInspector(
+                String(editingId),
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    GetMyInspectorAsync()
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const renderItem = ({ item }: any) => (
         <View style={styles.guardianItem}>
             <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
-                <TouchableOpacity onPress={() => handleCallPhone(item.phone)}>
+                <TouchableOpacity onPress={() => handleCallPhone(item.phoneNumber)}>
                     <Text style={styles.details}>
                         SĐT: <Text style={styles.phoneLink}>{item.phoneNumber}</Text>
                     </Text>
@@ -129,8 +184,16 @@ const InspectorScreen = () => {
             {
                 dataProfile.role == "parent"
                 &&
+
+                <TouchableOpacity onPress={() => openSheet(item)}>
+                    <Icon name="pencil" size={20} color="#4f3f97" />
+                </TouchableOpacity>
+            }
+            {
+                dataProfile.role == "parent"
+                &&
                 <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                    <Text style={styles.deleteText}>Xoá</Text>
+                    <Icon name="delete" size={20} color="#ff4d4f" />
                 </TouchableOpacity>
             }
 
@@ -221,7 +284,7 @@ const InspectorScreen = () => {
                         attribute="childrenIds"
                         dataAttribute={dataRequest.childrenIds}
                         setData={setDataRequest}
-                        isRequired
+                        isRequired={false}
                         validate={validate}
                         setValidate={setValidate}
                         submittedTime={submittedTime}

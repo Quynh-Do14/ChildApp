@@ -49,7 +49,43 @@ class MissionService {
             setLoading(false);
         }
     }
+    async CompleteMission(id: string, setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.
+                put(`${Endpoint.Mission.Complete}/${id}`,
+                    {}
+                ).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
+    async ConfirmMission(id: string, confirm: boolean, setLoading: Function) {
+        console.log("id", id);
+        console.log("confirm", confirm);
+
+        setLoading(true)
+        try {
+            return await RequestService.
+                put(`${Endpoint.Mission.Confirm}/${id}?confirm=${confirm}`,
+                    {}
+                ).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
     async deleteMission(id: string, setLoading: Function) {
+        console.log("id", id);
         setLoading(true)
         try {
             return await RequestService.

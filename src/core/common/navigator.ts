@@ -5,6 +5,8 @@ import MapScreen from "../../page/map";
 import MissionScreen from "../../page/mission";
 import ProfileScreen from "../../page/profile";
 import StaticScreen from "../../page/static";
+import WebBLockScreen from "../../page/web-block";
+import WebiewScreen from "../../page/webview";
 
 
 export const bottomNavigator = [
@@ -17,7 +19,7 @@ export const bottomNavigator = [
     {
         component: ChildrenScreen,
         name: "Danh sách trẻ",
-        icon: 'account-circle-outline',
+        icon: 'human-child',
         role: ['parent']
     },
     // {
@@ -42,6 +44,18 @@ export const bottomNavigator = [
         name: "Trò chuyện",
         icon: 'chat-outline',  // Trò chuyện / nhắn tin
         role: ['parent', 'child']
+    },
+    {
+        component: WebiewScreen,
+        name: "Trình duyệt",
+        icon: 'compass-outline',  // Trò chuyện / nhắn tin
+        role: ['child']
+    },
+    {
+        component: WebBLockScreen,
+        name: "Trình duyệt bị chặn",
+        icon: 'compass-off-outline',  // Trò chuyện / nhắn tin
+        role: ['parent']
     },
     // {
     //     component: StaticScreen,

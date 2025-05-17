@@ -62,7 +62,13 @@ const EditProfile = () => {
             <Text style={styles.label}>Trạng thái</Text>
             <Text style={styles.value}>Hoạt động</Text>
           </View>
-
+          {
+            dataProfile.role == "child"
+            && <View style={styles.infoRow}>
+              <Text style={styles.label}>Điểm</Text>
+              <Text style={styles.value}>{dataProfile.points}</Text>
+            </View>
+          }
         </ScrollView>
       </View >
     </MainLayout >

@@ -61,6 +61,7 @@ const MissionScreen = () => {
                 setLoading,
             ).then((response) => {
                 if (response) {
+                    console.log("response", response);
                     setListMission(response.content)
                 }
             });
@@ -76,34 +77,60 @@ const MissionScreen = () => {
     const bottomSheetRef = useRef<BottomSheet>(null);
 
     const addOrUpdateTask = async () => {
-        if (isValidData()) {
-            try {
-                await missionService.createMission(
-                    {
-                        "childId": dataRequest.childId,
-                        "title": dataRequest.title,
-                        "description": dataRequest.description,
-                        "deadline": dataRequest.deadline,
-                        "points": Number(dataRequest.points),
-                    },
-                    setLoading,
-                ).then((response) => {
-                    if (response) {
-                        GetMissonAsync()
-                        bottomSheetRef.current?.close();
-                    }
-                });
-            } catch (error) {
-                console.error(error);
+        if (editingId) {
+            if (isValidData()) {
+                try {
+                    await missionService.updateMission(
+                        String(editingId),
+                        {
+                            "childId": dataRequest.childId,
+                            "title": dataRequest.title,
+                            "description": dataRequest.description,
+                            "deadline": dataRequest.deadline,
+                            "points": Number(dataRequest.points),
+                        },
+                        setLoading,
+                    ).then((response) => {
+                        if (response) {
+                            GetMissonAsync().then(() => { });
+                            bottomSheetRef.current?.close();
+                        }
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
             }
         }
+        else {
+            if (isValidData()) {
+                try {
+                    await missionService.createMission(
+                        {
+                            "childId": dataRequest.childId,
+                            "title": dataRequest.title,
+                            "description": dataRequest.description,
+                            "deadline": dataRequest.deadline,
+                            "points": Number(dataRequest.points),
+                        },
+                        setLoading,
+                    ).then((response) => {
+                        if (response) {
+                            GetMissonAsync().then(() => { });
+                            bottomSheetRef.current?.close();
+                        }
+                    });
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+
     };
 
     const snapPoints = useMemo(() => ['90%'], []);
 
     const handleSheetChanges = useCallback((index: number) => {
         if (index === -1) {
-            // Reset form when sheet is closed
             setEditingId(null);
         }
     }, []);
@@ -113,57 +140,152 @@ const MissionScreen = () => {
     };
     const closeSheet = () => {
         bottomSheetRef.current?.close();
+        setEditingId(null);
     };
 
-    const deleteTask = (id: string) => {
-        Alert.alert('Xác nhận', 'Bạn muốn xóa nhiệm vụ này?', [
-            { text: 'Hủy' },
-            { text: 'Xóa', onPress: () => { } },
+    const handleDelete = (id: string) => {
+        setEditingId(id);
+        Alert.alert('Xoá người giám sát', 'Bạn có chắc muốn xoá người giám sát này?', [
+            { text: 'Hủy', style: 'cancel', onPress: () => setEditingId(null) },
+            { text: 'Xóa', onPress: () => onDeleteAsync() },
         ]);
+
+    };
+
+    const onDeleteAsync = async () => {
+        try {
+            await missionService.deleteMission(
+                String(editingId),
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    GetMissonAsync().then(() => { });
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const editTask = (task: any) => {
         setEditingId(task.id);
         openSheet();
+        setDataRequest({
+            "childId": task.child.id,
+            "title": task.title,
+            "description": task.description,
+            "deadline": task.deadline,
+            "points": String(task.points),
+        })
     };
 
     const toggleComplete = (item: any) => {
+        setEditingId(item.id);
         Alert.alert('Xác nhận', 'Bạn đã hoàn thành nhiệm vụ này?', [
             { text: 'Hủy' },
-            { text: 'Hoàn thành', onPress: () => { } },
+            { text: 'Hoàn thành', onPress: () => onCompleteAsync() },
         ]);
     };
 
-    const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.taskItem}>
-            <TouchableOpacity onPress={() => toggleComplete(item.id)}>
-                <Text style={[styles.taskTitle, item.completed && styles.completed]}>
-                    {item.title}
-                </Text>
-                <Text style={styles.deadline}>Hạn: {convertDate(item.deadline)}</Text>
-            </TouchableOpacity>
-            {
-                dataProfile?.role === "child"
-                    ?
-                    <View style={styles.actions}>
-                        <TouchableOpacity onPress={() => toggleComplete(item)} style={styles.button}>
-                            <Text style={styles.buttonText}>Hoàn thành</Text>
-                        </TouchableOpacity>
-                    </View>
-                    :
-                    <View style={styles.actions}>
-                        <TouchableOpacity onPress={() => editTask(item)} style={styles.button}>
-                            <Text style={styles.buttonText}>Sửa</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => deleteTask(item.id)} style={styles.button}>
-                            <Text style={[styles.buttonText, { color: '#ff1111' }]}>Xóa</Text>
-                        </TouchableOpacity>
-                    </View>
-            }
+    const onCompleteAsync = async () => {
+        try {
+            await missionService.CompleteMission(
+                String(editingId),
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    GetMissonAsync().then(() => { });
+                }
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
-        </View>
-    );
-    console.log("dataRequest", dataRequest.role);
+    const toggleConfirm = (item: any) => {
+        setEditingId(item.id);
+        Alert.alert('Xác nhận', 'Xác nhận hoàn thành nhiệm vụ này?', [
+            { text: 'Chưa hoàn thành', onPress: () => onConfirmAsync(false) },
+            { text: 'Hoàn thành', onPress: () => onConfirmAsync(true) },
+        ]);
+    };
+
+    const onConfirmAsync = async (confirm: boolean) => {
+        try {
+            await missionService.ConfirmMission(
+                String(editingId),
+                confirm,
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    GetMissonAsync().then(() => { });
+                }
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const renderItem = ({ item }: { item: any }) => {
+        return (
+            <View style={styles.taskItem}>
+                <TouchableOpacity onPress={() => toggleComplete(item.id)}>
+                    <Text style={[styles.taskTitle, item.confirm && styles.completed]}>
+                        {item.title}
+                    </Text>
+                    <Text style={[styles.deadline]}>
+                        {item.description}
+                    </Text>
+                    <Text style={styles.deadline}>Hạn: {convertDate(item.deadline)} | Điểm: {item.points}</Text>
+                </TouchableOpacity>
+                {
+                    item.confirm
+                        ?
+                        null
+                        :
+                        dataProfile?.role === "child" && item.completedAt !== null
+                            ?
+                            <View style={styles.actions}>
+                                <TouchableOpacity style={styles.button}>
+                                    <Text style={styles.buttonText}>Chờ xác nhận</Text>
+                                </TouchableOpacity>
+                            </View>
+                            :
+                            dataProfile?.role === "child" && item.completedAt === null
+                            &&
+                            <View style={styles.actions}>
+                                <TouchableOpacity onPress={() => toggleComplete(item)} style={styles.button}>
+                                    <Text style={styles.buttonText}>Hoàn thành</Text>
+                                </TouchableOpacity>
+                            </View>
+                }
+                {
+                    item.confirm
+                        ?
+                        null
+                        :
+                        dataProfile.role === "parent" && item.completedAt === null
+                            ?
+                            <View style={styles.actions}>
+                                <TouchableOpacity onPress={() => editTask(item)} style={styles.button}>
+                                    <Text style={styles.buttonText}>Sửa</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.button}>
+                                    <Text style={[styles.buttonText, { color: '#ff1111' }]}>Xóa</Text>
+                                </TouchableOpacity>
+                            </View>
+                            :
+                            dataProfile.role === "parent" && item.completedAt !== null
+                            &&
+                            <View style={styles.actions}>
+                                <TouchableOpacity onPress={() => toggleConfirm(item)} style={styles.button}>
+                                    <Text style={styles.buttonText}>Xác nhận</Text>
+                                </TouchableOpacity>
+                            </View>
+                }
+            </View>
+        );
+    }
 
     return (
         <KeyboardAvoidingView
@@ -251,7 +373,7 @@ const MissionScreen = () => {
                         attribute="childId"
                         dataAttribute={dataRequest.childId}
                         setData={setDataRequest}
-                        isRequired
+                        isRequired={false}
                         validate={validate}
                         setValidate={setValidate}
                         submittedTime={submittedTime}
@@ -261,15 +383,12 @@ const MissionScreen = () => {
                         title={editingId ? 'Cập nhật' : 'Thêm mới'}
                         onPress={addOrUpdateTask}
                     />
-
                     <ButtonCommon
                         title={'Đóng'}
                         onPress={closeSheet}
                     />
-
                 </BottomSheetView>
             </BottomSheet>
-            <LoadingFullScreen loading={loading} />
         </KeyboardAvoidingView>
     )
 }

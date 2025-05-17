@@ -29,7 +29,7 @@ export class Endpoint {
         static Update = "/missions/parent/update"
         static Complete = "/missions/child/complete"
         static Confirm = "/missions/parent/confirm"
-        static Delete = "/missions/parent/delete"
+        static  Delete = "/missions/parent/delete"
     }
     static Inspector = class {
         static Get = "/api/guardians"
