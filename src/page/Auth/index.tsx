@@ -36,33 +36,33 @@ const LoginScreen = () => {
     };
     const onLoginAsync = async () => {
         await setSubmittedTime(Date.now());
-        // if (isValidData()) {
-        try {
-            await authService.login(
-                // {
-                //     email: dataProfile.email,
-                //     password: dataProfile.password,
-                // },
-                {
-                    email: "quynhdo@gmail.com",
-                    password: "123456",
-                },
-                setLoading,
-            ).then((response) => {
-                if (response) {
-                    setDataProfile(
-                        {
-                            username: "",
-                            password: "",
-                        },
-                    )
-                    navigation.replace('DrawerMenu');
-                }
-            });
-        } catch (error) {
-            console.error(error);
+        if (isValidData()) {
+            try {
+                await authService.login(
+                    {
+                        email: dataProfile.email,
+                        password: dataProfile.password,
+                    },
+                    // {
+                    //     email: "quynhdo@gmail.com",
+                    //     password: "123456",
+                    // },
+                    setLoading,
+                ).then((response) => {
+                    if (response) {
+                        setDataProfile(
+                            {
+                                username: "",
+                                password: "",
+                            },
+                        )
+                        navigation.replace('DrawerMenu');
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+            }
         }
-        // }
         //  navigation.replace('DrawerMenu');
     }
 
