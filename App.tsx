@@ -45,27 +45,27 @@ const StackNavigator = () => {
   }, []);
 
   return (
-    <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator
-        initialRouteName={"LoginScreen"}
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen
-          name={"DrawerMenu"}
-          component={DrawerMenu}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen name={Constants.Navigator.Auth.LoginScreen.value} component={LoginScreen} />
-        <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
-        <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
-        <Stack.Screen name={"EditProfile"} component={EditProfile} />
-        <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
-        <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
-        <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
-        <Stack.Screen name="CallScreen" component={CallScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="IncomingCallScreen" component={IncomingCallScreen} options={{ headerShown: false }} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    // <NavigationContainer ref={navigationRef}>
+    <Stack.Navigator
+      initialRouteName={"LoginScreen"}
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen
+        name={"DrawerMenu"}
+        component={DrawerMenu}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name={Constants.Navigator.Auth.LoginScreen.value} component={LoginScreen} />
+      <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
+      <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
+      <Stack.Screen name={"EditProfile"} component={EditProfile} />
+      <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
+      <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
+      <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
+      <Stack.Screen name="CallScreen" component={CallScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="IncomingCallScreen" component={IncomingCallScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+    // </NavigationContainer>
   );
 };
 
@@ -74,7 +74,7 @@ function App(): React.JSX.Element {
   const [notification, setNotification] = useState<any>(null);
 
   // Tham chiếu đến đối tượng NavigationContainer
-  const navigationRef = React.useRef(null);
+  // const navigationRef = React.useRef(null);
 
   useEffect(() => {
     // Khởi tạo FCM khi app khởi động
