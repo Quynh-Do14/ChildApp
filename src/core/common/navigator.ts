@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import ChatListScreen from "../../page/chat";
 import ChildrenScreen from "../../page/children";
 import InspectorScreen from "../../page/inspector";
@@ -7,6 +8,7 @@ import ProfileScreen from "../../page/profile";
 import StaticScreen from "../../page/static";
 import WebBLockScreen from "../../page/web-block";
 import WebiewScreen from "../../page/webview";
+import { NavigationContainerRef, ParamListBase } from "@react-navigation/native";
 
 
 export const bottomNavigator = [
@@ -63,3 +65,29 @@ export const bottomNavigator = [
     //     icon: 'chart-bar',  // Biểu đồ thống kê
     // },
 ]
+
+export const navigationRef = createRef<NavigationContainerRef<ParamListBase>>();
+
+export function navigate(name: string, params?: object) {
+  if (navigationRef.current) {
+    navigationRef.current.navigate(name, params);
+  } else {
+    // Lưu lại thông tin điều hướng để thực hiện sau khi navigation sẵn sàng
+    console.warn('Navigation attempted before navigator was ready');
+  }
+}
+
+export function goBack() {
+  if (navigationRef.current) {
+    navigationRef.current.goBack();
+  }
+}
+
+export function reset(name: string, params?: object) {
+  if (navigationRef.current) {
+    navigationRef.current.reset({
+      index: 0,
+      routes: [{ name, params }],
+    });
+  }
+}

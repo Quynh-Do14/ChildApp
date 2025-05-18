@@ -42,4 +42,10 @@ export class Endpoint {
         static RegisterToken = "/device-tokens/register"
         static UnregisterToken = "/device-tokens/unregister"
     }
-};
+    static Call = class {
+        static GetToken = "/call/get-token"
+        static History = "/call/history"
+        static InitiateCall = "/call/initiate"
+        static EndCall = "/call/end"
+    }
+}

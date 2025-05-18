@@ -15,6 +15,9 @@ import RegisterScreen from './src/page/Auth/register';
 import OtpVerificationScreen from './src/page/Auth/veriify-otp';
 import fcmService from './src/infrastructure/repositories/fcm/fcmService';
 import InAppNotification from './src/page/notification/InAppNotification';
+import CallScreen from './src/page/call/CallScreen';
+import IncomingCallScreen from './src/page/call/IncomingCallScreen';
+import { navigationRef } from './src/core/common/navigator';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -42,23 +45,27 @@ const StackNavigator = () => {
   }, []);
 
   return (
-    <Stack.Navigator
-      initialRouteName={"LoginScreen"}
-      screenOptions={{ headerShown: false }}
-    >
-      <Stack.Screen
-        name={"DrawerMenu"}
-        component={DrawerMenu}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen name={Constants.Navigator.Auth.LoginScreen.value} component={LoginScreen} />
-      <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
-      <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
-      <Stack.Screen name={"EditProfile"} component={EditProfile} />
-      <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
-      <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
-      <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
-    </Stack.Navigator>
+    <NavigationContainer ref={navigationRef}>
+      <Stack.Navigator
+        initialRouteName={"LoginScreen"}
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen
+          name={"DrawerMenu"}
+          component={DrawerMenu}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name={Constants.Navigator.Auth.LoginScreen.value} component={LoginScreen} />
+        <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
+        <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
+        <Stack.Screen name={"EditProfile"} component={EditProfile} />
+        <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
+        <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
+        <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
+        <Stack.Screen name="CallScreen" component={CallScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="IncomingCallScreen" component={IncomingCallScreen} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 

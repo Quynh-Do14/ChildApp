@@ -2,6 +2,7 @@ import messaging from '@react-native-firebase/messaging';
 import { Platform, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Endpoint } from '../../../core/common/apiLink';
+import { navigationRef } from '../../../core/common/navigator';
 
 class FCMService {
   /**
@@ -119,10 +120,34 @@ class FCMService {
    * Thiết lập các bộ lắng nghe cho thông báo
    */
   setupMessageListeners(onNotificationReceived: any) {
-    // Xử lý thông báo khi ứng dụng đang chạy ở foreground
+    // Xử lý thông báo khi ứng dụng đang chạy ở foreground - chỉ một listener
     const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
       console.log('Foreground notification received:', remoteMessage);
-      onNotificationReceived(remoteMessage);
+
+      // Nếu là thông báo cuộc gọi
+      if (remoteMessage.data && remoteMessage.data.type === 'call') {
+        try {
+          // Xác định và phân tích callData
+          const callData =
+            typeof remoteMessage.data.callData === 'string'
+              ? JSON.parse(remoteMessage.data.callData)
+              : remoteMessage.data.callData;
+
+          // Điều hướng đến màn hình cuộc gọi đến
+          if (navigationRef && navigationRef.current) {
+            navigationRef.current.navigate('IncomingCallScreen', {
+              callerName: callData.callerName,
+              channelId: callData.channelId,
+              callerImage: callData.callerImage,
+            });
+          }
+        } catch (error) {
+          console.error('Error processing call notification:', error);
+        }
+      } else {
+        // Xử lý các thông báo thông thường
+        onNotificationReceived(remoteMessage);
+      }
     });
 
     // Xử lý khi user nhấn vào thông báo và mở ứng dụng từ background
