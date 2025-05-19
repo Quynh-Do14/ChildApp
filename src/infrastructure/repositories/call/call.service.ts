@@ -41,26 +41,62 @@ class CallService {
 
     async joinChannel(channelId: string, uid: number = 0) {
         try {
-            const userToken = await AsyncStorage.getItem('token');
+            console.log(`Attempting to join channel: ${channelId}`);
 
+            const userToken = await AsyncStorage.getItem('token');
             if (!userToken) {
+                console.error('User not authenticated');
                 throw new Error('User not authenticated');
             }
 
-            // Lấy token từ backend
+            // Lấy token từ backend với method GET rõ ràng và timeout
+            console.log(`Fetching Agora token from: ${Endpoint.Call.GetToken}?channelName=${channelId}`);
+
+            // Tạo controller để có thể abort request nếu quá thời gian
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
             const response = await fetch(`${Endpoint.Call.GetToken}?channelName=${channelId}`, {
+                method: 'GET', // Chỉ định method rõ ràng
                 headers: {
-                    'Authorization': `Bearer ${userToken}`
-                }
+                    'Authorization': `Bearer ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                signal: controller.signal // Sử dụng signal từ controller
             });
 
-            const { token } = await response.json();
+            // Clear timeout sau khi có response
+            clearTimeout(timeoutId);
 
+            // Kiểm tra response status
+            console.log(`Token API response status: ${response.status}`);
+
+            // Xử lý response không thành công
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`API error: ${response.status}`, errorText);
+                throw new Error(`Failed to get Agora token: ${response.status}`);
+            }
+
+            // Parse response JSON
+            const data = await response.json();
+            console.log('Token API response:', data);
+
+            if (!data.token) {
+                console.error('No token in response:', data);
+                throw new Error('No Agora token in response');
+            }
+
+            // Yêu cầu quyền và khởi tạo engine
             await this.requestPermissions();
             await this.initEngine();
 
+            // Log thông tin trước khi join
+            console.log(`Joining Agora channel with token: ${data.token.substring(0, 20)}...`);
+
             // Tham gia kênh với token
-            await this.engine.joinChannel(token, channelId, null, uid);
+            await this.engine.joinChannel(data.token, channelId, null, uid);
+            console.log('Successfully joined Agora channel');
 
             return true;
         } catch (error) {

@@ -7,6 +7,7 @@ import {
     SafeAreaView,
     Platform,
     Animated,
+    Alert,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -81,25 +82,49 @@ const CallScreen = () => {
     // Tham gia kênh khi màn hình được mở
     useEffect(() => {
         const setupCall = async () => {
-            if (isIncoming) {
-                // Nếu là cuộc gọi đến, tham gia kênh
-                await callService.joinChannel(channelId);
+            try {
+                setCallState('connecting'); // Hiển thị trạng thái đang kết nối
+                
+                console.log('Setting up call with channel ID:', channelId);
+                
+                const joinSuccess = await callService.joinChannel(channelId);
+                
+                if (!joinSuccess) {
+                    console.error('Failed to join channel');
+                    // Hiển thị thông báo lỗi cho người dùng
+                    Alert.alert(
+                      'Không thể kết nối',
+                      'Không thể tham gia cuộc gọi. Vui lòng kiểm tra kết nối mạng và thử lại.',
+                      [{ text: 'OK', onPress: () => navigation.goBack() }]
+                    );
+                    return;
+                }
+                
+                console.log('Successfully joined channel');
+                
+                // Thiết lập các sự kiện
+                const cleanup = callService.setupCallEvents(
+                    handleUserJoined,
+                    handleUserOffline
+                );
+                
+                return () => {
+                    cleanup();
+                    endCall(); // Đảm bảo cuộc gọi được kết thúc khi unmount
+                };
+            } catch (error) {
+                console.error('Error setting up call:', error);
+                // Hiển thị thông báo lỗi
+                Alert.alert(
+                  'Lỗi cuộc gọi',
+                  'Đã xảy ra lỗi khi thiết lập cuộc gọi. Vui lòng thử lại sau.',
+                  [{ text: 'OK', onPress: () => navigation.goBack() }]
+                );
             }
-
-            // Thiết lập các sự kiện
-            const cleanup = callService.setupCallEvents(
-                handleUserJoined,
-                handleUserOffline
-            );
-
-            return () => {
-                cleanup();
-                callService.leaveChannel();
-            };
         };
-
+        
         setupCall();
-    }, [channelId, isIncoming, handleUserJoined, handleUserOffline]);
+    }, [channelId, isIncoming, handleUserJoined, handleUserOffline, endCall, navigation]);
 
     // Đăng ký callback cho chất lượng mạng
     useEffect(() => {
