@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import Constants from './src/core/common/constants';
@@ -182,83 +182,43 @@ function App(): React.JSX.Element {
   }, [isNavigationReady]); // Thêm isNavigationReady vào dependencies
 
   // Xử lý thông báo đang chờ
-  useEffect(() => {
-    if (!pendingNotification) return;
+  const handlePendingNotification = useCallback(() => {
+    if (!pendingNotification || !isNavigationReady) return;
 
-    console.log(
-      'Processing pending notification, navigation ready:',
-      isNavigationReady,
-    );
-
-    // Nếu navigation chưa sẵn sàng nhưng có pendingNotification, đợi 300ms rồi kiểm tra lại
-    if (!isNavigationReady) {
-      console.log('Setting navigation ready due to pending notification');
-      setIsNavigationReady(true);
-    }
-
-    // Chỉ xử lý thông báo khi navigation đã sẵn sàng
-    if (isNavigationReady) {
-      console.log('Navigation is ready, processing notification after delay');
-      const timer = setTimeout(() => {
-        try {
-          // Debugging
-          console.log(
-            'Handling notification:',
-            pendingNotification.data?.type,
-            JSON.stringify(pendingNotification.data),
-          );
-
-          // Thử xử lý thông báo
-          const isCallHandled =
-            fcmService.handleCallNotification(pendingNotification);
-          console.log('Call handled result:', isCallHandled);
-
-          if (!isCallHandled && pendingNotification.notification) {
-            // Hiển thị thông báo trong app
-            setNotification({
-              title: pendingNotification.notification.title || 'Thông báo mới',
-              body: pendingNotification.notification.body || '',
-              data: pendingNotification.data,
-            });
-          }
-        } catch (error) {
-          console.error('Error handling pending notification:', error);
-        } finally {
-          setPendingNotification(null);
-        }
-      }, 1000); // Thời gian chờ hợp lý
-
-      return () => clearTimeout(timer);
-    }
-
-    // Trong App.tsx - thêm vào useEffect xử lý pendingNotification
     const attemptNavigation = (attempt = 1, maxAttempts = 5) => {
       console.log(`Navigation attempt ${attempt}/${maxAttempts}`);
 
-      if (navigationRef.current) {
-        try {
-          const isCallHandled =
-            fcmService.handleCallNotification(pendingNotification);
-          console.log('Call handled result:', isCallHandled);
-        } catch (error) {
-          console.error('Error handling notification:', error);
-        } finally {
-          setPendingNotification(null);
+      try {
+        const isCallHandled = fcmService.handleCallNotification(pendingNotification);
+        console.log('Call handled result:', isCallHandled);
+
+        if (!isCallHandled && pendingNotification.notification) {
+          setNotification({
+            title: pendingNotification.notification.title || 'Thông báo mới',
+            body: pendingNotification.notification.body || '',
+            data: pendingNotification.data,
+          });
         }
-      } else if (attempt < maxAttempts) {
-        // Thử lại sau 500ms
-        setTimeout(() => attemptNavigation(attempt + 1, maxAttempts), 500);
-      } else {
-        console.error('Failed to navigate after max attempts');
+      } catch (error) {
+        console.error('Error handling notification:', error);
+        if (attempt < maxAttempts) {
+          // Thử lại sau 300ms
+          setTimeout(() => attemptNavigation(attempt + 1), 300);
+          return;
+        }
+      } finally {
         setPendingNotification(null);
       }
     };
 
-    // Nếu có pendingNotification, thử điều hướng
-    if (pendingNotification) {
-      attemptNavigation();
+    attemptNavigation();
+  }, [pendingNotification, isNavigationReady]);
+
+  useEffect(() => {
+    if (pendingNotification && isNavigationReady) {
+      handlePendingNotification();
     }
-  }, [isNavigationReady, pendingNotification]); // Thêm cả hai dependencies
+  }, [pendingNotification, isNavigationReady, handlePendingNotification]);
 
   // Phần return trong App.tsx
   return (
