@@ -1,5 +1,5 @@
 import RtcEngine from 'react-native-agora';
-import { Platform, PermissionsAndroid, Alert } from 'react-native';
+import { Platform, PermissionsAndroid, Alert, AppState } from 'react-native';
 import { requestMultiple, PERMISSIONS } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Endpoint } from '../../../core/common/apiLink';
@@ -94,23 +94,23 @@ class CallService {
                     recipientId: recipientId,
                 }),
             });
-            
+
             const responseData = await response.json();
             console.log('InitiateCall response:', responseData);
-            
+
             // Xác định channelId từ nhiều định dạng có thể có
             let channelId;
             if (responseData.channelName) {
-              channelId = responseData.channelName;
+                channelId = responseData.channelName;
             } else if (responseData.message) {
-              // Sử dụng message field nếu không có channelName
-              channelId = responseData.message;
+                // Sử dụng message field nếu không có channelName
+                channelId = responseData.message;
             } else {
-              throw new Error('Unable to extract channel ID from response');
+                throw new Error('Unable to extract channel ID from response');
             }
-            
+
             console.log('Using Channel ID:', channelId);
-            
+
             // Tiếp tục với việc tham gia kênh
             const joinResult = await this.joinChannel(channelId);
 
@@ -144,8 +144,40 @@ class CallService {
         }
     }
 
-    async endCall() {
-        await this.leaveChannel();
+    async endCall(channelId?: string) {
+        try {
+            // 1. Rời khỏi kênh Agora
+            await this.leaveChannel();
+
+            // 2. Cập nhật trạng thái cuộc gọi trên server
+            const userToken = await AsyncStorage.getItem('token');
+            if (userToken && channelId) {
+                try {
+                    // Gọi API để cập nhật trạng thái cuộc gọi
+                    await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${userToken}`,
+                        },
+                    });
+                    console.log(`Call ${channelId} ended with status: COMPLETED`);
+                } catch (apiError) {
+                    console.error('Error updating call status:', apiError);
+                }
+            }
+
+            // 3. Reset các biến trạng thái
+            this.isCallConnected = false;
+            if (this.callTimeout) {
+                clearTimeout(this.callTimeout);
+                this.callTimeout = null;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error ending call:', error);
+            return false;
+        }
     }
 
     setupCallEvents(onUserJoined: any, onUserOffline: any) {
@@ -173,6 +205,22 @@ class CallService {
             clearTimeout(this.callTimeout);
             this.callTimeout = null;
         }
+    }
+
+    setupAppStateListener() {
+        const subscription = AppState.addEventListener('change', nextAppState => {
+            if (this.engine && this.isCallConnected && nextAppState === 'background') {
+                // Lưu thông tin cuộc gọi để có thể khôi phục
+                AsyncStorage.setItem('ongoingCall', JSON.stringify({
+                    isActive: true,
+                    timestamp: Date.now()
+                }));
+            }
+        });
+
+        return () => {
+            subscription.remove();
+        };
     }
 }
 

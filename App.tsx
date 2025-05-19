@@ -276,7 +276,7 @@ function App(): React.JSX.Element {
             />
           )}
           {/* Thêm vào NavigationContainer trong App.tsx - để debug */}
-          {__DEV__ && (
+          {/* {__DEV__ && (
             <TouchableOpacity
               style={{
                 position: 'absolute',
@@ -296,7 +296,7 @@ function App(): React.JSX.Element {
               }}>
               <Text style={{color: 'white'}}>Test Call Nav</Text>
             </TouchableOpacity>
-          )}
+          )} */}
         </NavigationContainer>
       </RecoilRoot>
     </GestureHandlerRootView>

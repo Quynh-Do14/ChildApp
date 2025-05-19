@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Endpoint } from '../../core/common/apiLink';
 
 // Định nghĩa kiểu cho navigation stack
 type RootStackParamList = {
@@ -37,10 +39,23 @@ const IncomingCallScreen = () => {
     const { callerName, channelId, callerImage } = route.params;
 
     // Từ chối cuộc gọi
-    const rejectCall = useCallback(() => {
-        // Có thể thêm API để thông báo từ chối
-        navigation.goBack();
-    }, [navigation]);
+    const rejectCall = useCallback(async () => {
+        try {
+            const userToken = await AsyncStorage.getItem('token');
+
+            if (userToken) {
+                await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error rejecting call:', error);
+            navigation.goBack();
+        }
+    }, [navigation, channelId]);
 
     // Tự động từ chối cuộc gọi sau 30 giây
     useEffect(() => {

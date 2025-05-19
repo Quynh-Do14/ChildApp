@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
     View,
     TouchableOpacity,
@@ -6,6 +6,7 @@ import {
     StyleSheet,
     SafeAreaView,
     Platform,
+    Animated,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -30,6 +31,7 @@ const CallScreen = () => {
     const [callState, setCallState] = useState<'connecting' | 'connected' | 'ended'>('connecting');
     const [showNetworkWarning, setShowNetworkWarning] = useState(false);
     const [remoteMuted, setRemoteMuted] = useState(false);
+    const fadeAnim = useRef(new Animated.Value(1)).current; // Giá trị animation ban đầu
 
     // Timer cho thời lượng cuộc gọi
     useEffect(() => {
@@ -59,9 +61,15 @@ const CallScreen = () => {
 
     // Define endCall function first
     const endCall = useCallback(async () => {
-        await callService.endCall();
-        navigation.goBack();
-    }, [navigation]);
+        try {
+            setCallState('ended');
+            await callService.endCall(channelId);
+            navigation.goBack();
+        } catch (error) {
+            console.error('Error ending call:', error);
+            navigation.goBack();
+        }
+    }, [navigation, channelId]);
 
     // Xử lý khi người dùng rời đi
     const handleUserOffline = useCallback((uid: any) => {
@@ -145,6 +153,17 @@ const CallScreen = () => {
             callService.engine?.removeListener('AudioStateChanged');
         };
     }, []);
+
+    // Hiệu ứng khi kết thúc cuộc gọi
+    useEffect(() => {
+        if (callState === 'ended') {
+            Animated.timing(fadeAnim, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true
+            }).start();
+        }
+    }, [callState, fadeAnim]);
 
     return (
         <SafeAreaView style={styles.container}>
