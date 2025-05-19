@@ -68,12 +68,28 @@ export const bottomNavigator = [
 
 export const navigationRef = createRef<NavigationContainerRef<ParamListBase>>();
 
+let isNavigationReady = false;
+let pendingNavigationCalls: Array<{ name: string; params?: object }> = [];
+
+export function setNavigationReady() {
+  isNavigationReady = true;
+  
+  // Xử lý các lệnh điều hướng đang chờ
+  if (pendingNavigationCalls.length > 0) {
+    console.log(`Processing ${pendingNavigationCalls.length} pending navigation calls`);
+    pendingNavigationCalls.forEach(call => {
+      navigate(call.name, call.params);
+    });
+    pendingNavigationCalls = [];
+  }
+}
+
 export function navigate(name: string, params?: object) {
   if (navigationRef.current) {
     navigationRef.current.navigate(name, params);
   } else {
-    // Lưu lại thông tin điều hướng để thực hiện sau khi navigation sẵn sàng
-    console.warn('Navigation attempted before navigator was ready');
+    console.warn('Navigation attempted before navigator was ready, queuing...');
+    pendingNavigationCalls.push({ name, params });
   }
 }
 

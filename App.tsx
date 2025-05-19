@@ -17,8 +17,9 @@ import fcmService from './src/infrastructure/repositories/fcm/fcmService';
 import InAppNotification from './src/page/notification/InAppNotification';
 import CallScreen from './src/page/call/CallScreen';
 import IncomingCallScreen from './src/page/call/IncomingCallScreen';
-import { navigationRef } from './src/core/common/navigator';
+import { navigationRef, setNavigationReady } from './src/core/common/navigator';
 import CallHistoryScreen from './src/page/call/CallHistoryScreen';
+import messaging from '@react-native-firebase/messaging';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -74,6 +75,7 @@ const StackNavigator = () => {
 function App(): React.JSX.Element {
   // Sử dụng một state duy nhất để theo dõi thông báo hiện tại
   const [notification, setNotification] = useState<any>(null);
+  const [pendingNotification, setPendingNotification] = useState<any>(null);
 
   // Tham chiếu đến đối tượng NavigationContainer
   // const navigationRef = React.useRef(null);
@@ -115,6 +117,16 @@ function App(): React.JSX.Element {
           // Thiết lập lắng nghe token refresh
           const unsubscribeTokenRefresh = fcmService.setupTokenRefresh();
 
+          // Kiểm tra thông báo khi mở app từ trạng thái đóng
+          const initialNotification = await messaging().getInitialNotification();
+          if (initialNotification) {
+            console.log('App opened from killed state by notification:', 
+              JSON.stringify(initialNotification));
+            
+            // Lưu thông báo đến một state để xử lý sau khi navigation sẵn sàng
+            setPendingNotification(initialNotification);
+          }
+
           // Dọn dẹp khi unmount
           return () => {
             unsubscribe && unsubscribe();
@@ -129,10 +141,33 @@ function App(): React.JSX.Element {
     initFCM();
   }, []);
 
+  useEffect(() => {
+    if (pendingNotification && navigationRef.current) {
+      // Xử lý thông báo đang chờ sau khi navigation sẵn sàng
+      const handlePendingNotification = async () => {
+        // Thử xử lý thông báo
+        const isCallHandled = fcmService.handleCallNotification(pendingNotification);
+        if (!isCallHandled) {
+          onNotificationReceived(pendingNotification);
+        }
+        setPendingNotification(null);
+      };
+      
+      // Đợi một chút để đảm bảo navigation đã sẵn sàng
+      setTimeout(handlePendingNotification, 500);
+    }
+  }, [pendingNotification, navigationRef.current]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <RecoilRoot>
-        <NavigationContainer ref={navigationRef}>
+        <NavigationContainer 
+          ref={navigationRef}
+          onReady={() => {
+            setNavigationReady();
+            console.log('Navigation is ready');
+          }}
+        >
           <StackNavigator />
           {notification && (
             <InAppNotification

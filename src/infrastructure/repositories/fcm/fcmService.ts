@@ -120,8 +120,9 @@ class FCMService {
     // Hàm xử lý thông báo cuộc gọi chung
     const handleCallNotification = (remoteMessage: any) => {
       try {
+        console.log('CHECK NOTIFICATION TYPE:', remoteMessage?.data?.type);
+        
         if (remoteMessage.data && remoteMessage.data.type === 'call') {
-          // Xác định và phân tích callData
           const callData =
             typeof remoteMessage.data.callData === 'string'
               ? JSON.parse(remoteMessage.data.callData)
@@ -129,19 +130,31 @@ class FCMService {
 
           console.log('Processing call notification with data:', callData);
 
-          // Điều hướng đến màn hình cuộc gọi đến
-          if (navigationRef && navigationRef.current) {
-            navigationRef.current.navigate('IncomingCallScreen', {
-              callerName: callData.callerName,
-              channelId: callData.channelId,
-              callerImage: callData.callerImage,
-            });
-            return true; // Đã xử lý thông báo cuộc gọi
-          } else {
-            console.error('Navigation reference is not available');
-          }
+          // Thêm cơ chế retry với setTimeout
+          const navigateToCallScreen = (retries = 5) => {
+            if (navigationRef.current) {
+              console.log('Navigation ref ready, navigating to IncomingCallScreen');
+              navigationRef.current.navigate('IncomingCallScreen', {
+                callerName: callData.callerName,
+                channelId: callData.channelId,
+                callerImage: callData.callerImage,
+              });
+              return true;
+            } else {
+              console.log(`Navigation ref not ready, retries left: ${retries}`);
+              if (retries > 0) {
+                // Thử lại sau 300ms
+                setTimeout(() => navigateToCallScreen(retries - 1), 300);
+              } else {
+                console.error('Max retries reached, navigation ref still not available');
+              }
+              return false;
+            }
+          };
+
+          return navigateToCallScreen();
         }
-        return false; // Không phải thông báo cuộc gọi
+        return false;
       } catch (error) {
         console.error('Error processing call notification:', error);
         return false;
