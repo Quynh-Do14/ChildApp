@@ -17,7 +17,7 @@ import fcmService from './src/infrastructure/repositories/fcm/fcmService';
 import InAppNotification from './src/page/notification/InAppNotification';
 import CallScreen from './src/page/call/CallScreen';
 import IncomingCallScreen from './src/page/call/IncomingCallScreen';
-import { navigationRef, setNavigationReady } from './src/core/common/navigator';
+import { navigate, navigationRef, setNavigationReady } from './src/core/common/navigator';
 import CallHistoryScreen from './src/page/call/CallHistoryScreen';
 import messaging from '@react-native-firebase/messaging';
 
@@ -194,6 +194,33 @@ function App(): React.JSX.Element {
       
       return () => clearTimeout(timer);
     }
+
+    // Trong App.tsx - thêm vào useEffect xử lý pendingNotification
+    const attemptNavigation = (attempt = 1, maxAttempts = 5) => {
+      console.log(`Navigation attempt ${attempt}/${maxAttempts}`);
+      
+      if (navigationRef.current) {
+        try {
+          const isCallHandled = fcmService.handleCallNotification(pendingNotification);
+          console.log('Call handled result:', isCallHandled);
+        } catch (error) {
+          console.error('Error handling notification:', error);
+        } finally {
+          setPendingNotification(null);
+        }
+      } else if (attempt < maxAttempts) {
+        // Thử lại sau 500ms
+        setTimeout(() => attemptNavigation(attempt + 1, maxAttempts), 500);
+      } else {
+        console.error('Failed to navigate after max attempts');
+        setPendingNotification(null);
+      }
+    };
+
+    // Nếu có pendingNotification, thử điều hướng
+    if (pendingNotification) {
+      attemptNavigation();
+    }
   }, [pendingNotification, isNavigationReady]); // Thêm cả hai dependencies
 
   // Phần return trong App.tsx
@@ -215,15 +242,17 @@ function App(): React.JSX.Element {
               message={notification.body}
               onPress={() => {
                 console.log('Notification pressed:', notification.data);
-                // Kiểm tra xem đây có phải thông báo cuộc gọi không
                 if (notification.data?.type === 'call') {
-                  fcmService.handleCallNotification({data: notification.data});
-                } 
-                // Xử lý điều hướng thông thường
-                else if (notification.data?.screen && navigationRef.current) {
-                  navigationRef.current.navigate(notification.data.screen, notification.data.params);
+                  // Sử dụng hàm navigate từ navigator.ts
+                  navigate('IncomingCallScreen', {
+                    callerName: notification.data?.callData?.callerName || "Unknown",
+                    channelId: notification.data?.callData?.channelId,
+                    callerImage: notification.data?.callData?.callerImage || null,
+                  });
+                } else if (notification.data?.screen) {
+                  // Cũng sử dụng hàm navigate
+                  navigate(notification.data.screen, notification.data.params);
                 }
-                // Đóng notification sau khi xử lý
                 setNotification(null);
               }}
               onClose={() => setNotification(null)}
