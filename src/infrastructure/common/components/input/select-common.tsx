@@ -43,12 +43,15 @@ const SelectCommon = (props: Props) => {
         setData({
             [attribute]: value || ''
         });
-        validateEvent(false)
+
+        // Gọi validate sau khi setState hoàn tất
+        setTimeout(() => {
+            validateFields(false, attribute, !value, setValidate, validate, !value ? `Vui lòng nhập ${labelLower}` : "");
+        }, 0);
     };
 
     useEffect(() => {
         setValueInput(dataAttribute || '');
-
     }, [dataAttribute]);
 
     useEffect(() => {

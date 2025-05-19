@@ -24,18 +24,22 @@ import LoadingFullScreen from '../../infrastructure/common/components/controls/l
 import SelectCommon from '../../infrastructure/common/components/input/select-common';
 import { ChildState } from '../../core/atoms/child/childState';
 
+type Inspector = {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    childrenIds: string[];
+};
+
+type InspectorFormData = {
+    name: string;
+    phoneNumber: string;
+    childrenIds: string;
+};
+
 const InspectorScreen = () => {
-    const [_data, _setData] = useState<any>({});
-    const [validate, setValidate] = useState<any>({});
-    const [submittedTime, setSubmittedTime] = useState<any>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
-
-    const [loading, setLoading] = useState<boolean>(false);
-    const [listInspector, setListInspector] = useState<any[]>([])
-
-    const dataChildren = useRecoilValue(ChildState).data;
-    const dataProfile = useRecoilValue(ProfileState).data;
-    const navigation = useNavigation<any>();
+    const [_data, _setData] = useState<any>({});
     const dataRequest = _data;
     const setDataRequest = (data: any) => {
         Object.assign(dataRequest, { ...data });
@@ -54,151 +58,119 @@ const InspectorScreen = () => {
 
         return allRequestOK;
     };
+    const [validate, setValidate] = useState<Record<string, any>>({});
+    const [submittedTime, setSubmittedTime] = useState<number | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [listInspector, setListInspector] = useState<Inspector[]>([]);
 
-    const GetMyInspectorAsync = async () => {
-        try {
-            await inspectorService.getInspector(
-                setLoading,
-            ).then((response) => {
-                if (response) {
-                    setListInspector(response)
-                }
-            });
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    useEffect(() => {
-        GetMyInspectorAsync().then(() => { });
-    }, []);
-
-    console.log("editingId", editingId);
-
-    const onCreateAsync = async () => {
-        if (editingId) {
-            if (isValidData()) {
-                try {
-                    await inspectorService.updateInspector(
-                        String(editingId),
-                        {
-                            "name": dataRequest.name,
-                            "phoneNumber": dataRequest.phoneNumber,
-                            "childrenIds": [dataRequest.childrenIds]
-                        },
-                        setLoading,
-                    ).then((response) => {
-                        if (response) {
-                            console.log("response", response);
-                            GetMyInspectorAsync()
-                            closeSheet();
-                        }
-                    });
-                } catch (error) {
-                    console.log(error);
-                }
-            }
-        }
-        else {
-            if (isValidData()) {
-                try {
-                    await inspectorService.createInspector(
-                        {
-                            "name": dataRequest.name,
-                            "phoneNumber": dataRequest.phoneNumber,
-                            "childrenIds": [dataRequest.childrenIds]
-                        },
-                        setLoading,
-                    ).then((response) => {
-                        if (response) {
-                            GetMyInspectorAsync()
-                            closeSheet();
-                        }
-                    });
-                } catch (error) {
-                    console.log(error);
-                }
-            }
-        }
-
-    };
-
+    // Hooks and Recoil state
+    const navigation = useNavigation<any>();
+    const dataChildren = useRecoilValue(ChildState).data || [];
+    const dataProfile = useRecoilValue(ProfileState).data;
     const bottomSheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ['90%'], []);
 
+    // Data fetching
+    const fetchInspectors = async (loadingState: boolean = true) => {
+        try {
+            const response = await inspectorService.getInspector(
+                loadingState ? setLoading : setRefreshing
+            );
+            if (response) {
+                setListInspector(response);
+            }
+        } catch (error) {
+            Alert.alert('Lỗi', 'Không thể tải danh sách người giám sát');
+            console.error('Fetch inspectors error:', error);
+        }
+    };
+
+    // Effects
+    useEffect(() => {
+        fetchInspectors();
+    }, []);
+
+    const handleRefresh = () => {
+        fetchInspectors(false);
+    };
+
+    // Form validation
+
+    // Bottom sheet handlers
     const handleSheetChanges = useCallback((index: number) => {
         if (index === -1) {
             setEditingId(null);
         }
     }, []);
 
-    const openSheet = (item?: any) => {
-        if (item) {
-            setDataRequest({ ...item });
-            setEditingId(item.id);
-        } else {
-            setDataRequest({});
-            setEditingId(null);
+    const openSheet = (inspector?: Inspector) => {
+        if (inspector) {
+            setEditingId(inspector.id);
+            setDataRequest({
+                "name": inspector.name,
+                "phoneNumber": inspector.phoneNumber,
+                "childrenIds": inspector.childrenIds
+            })
         }
         bottomSheetRef.current?.expand();
     };
+
     const closeSheet = () => {
+        setEditingId(null);
+        setDataRequest({
+            "name": "",
+            "phoneNumber": "",
+            "childrenIds": ""
+        })
         bottomSheetRef.current?.close();
-    };
+    }
 
-    const handleDelete = (id: string) => {
-        setEditingId(id);
-        Alert.alert('Xoá người giám sát', 'Bạn có chắc muốn xoá người giám sát này?', [
-            { text: 'Hủy', style: 'cancel', onPress: () => setEditingId(null) },
-            { text: 'Xóa', onPress: () => onDeleteAsync() },
-        ]);
-        
+    // Inspector CRUD operations
+    const handleAddOrUpdateInspector = async () => {
+        if (!isValidData()) return;
 
-    };
-
-    const onDeleteAsync = async () => {
         try {
-            await inspectorService.deleteInspector(
-                String(editingId),
-                setLoading,
-            ).then((response) => {
-                if (response) {
-                    GetMyInspectorAsync()
-                }
-            });
+            const inspectorData = {
+                "name": dataRequest.name,
+                "phoneNumber": dataRequest.phoneNumber,
+                "childrenIds": [dataRequest.childrenIds]
+            };
+
+            const response = editingId
+                ? await inspectorService.updateInspector(editingId, inspectorData, setLoading)
+                : await inspectorService.createInspector(inspectorData, setLoading);
+
+            if (response) {
+                await fetchInspectors();
+                closeSheet();
+            }
         } catch (error) {
-            console.error(error);
+            Alert.alert('Lỗi', editingId ? 'Cập nhật thất bại' : 'Tạo mới thất bại');
+            console.error('Inspector operation error:', error);
         }
     };
 
-    const renderItem = ({ item }: any) => (
-        <View style={styles.guardianItem}>
-            <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
-                <TouchableOpacity onPress={() => handleCallPhone(item.phoneNumber)}>
-                    <Text style={styles.details}>
-                        SĐT: <Text style={styles.phoneLink}>{item.phoneNumber}</Text>
-                    </Text>
-                </TouchableOpacity>
-            </View>
+    const handleDeleteInspector = (id: string) => {
+        Alert.alert('Xác nhận', 'Bạn có chắc muốn xoá người giám sát này?', [
+            { text: 'Hủy', style: 'cancel' },
             {
-                dataProfile.role == "parent"
-                &&
+                text: 'Xóa',
+                onPress: async () => {
+                    try {
+                        const response = await inspectorService.deleteInspector(id, setLoading);
+                        if (response) {
+                            await fetchInspectors();
+                        }
+                    } catch (error) {
+                        Alert.alert('Lỗi', 'Xóa người giám sát thất bại');
+                        console.error('Delete inspector error:', error);
+                    }
+                },
+            },
+        ]);
+    };
 
-                <TouchableOpacity onPress={() => openSheet(item)}>
-                    <Icon name="pencil" size={20} color="#4f3f97" />
-                </TouchableOpacity>
-            }
-            {
-                dataProfile.role == "parent"
-                &&
-                <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                    <Icon name="delete" size={20} color="#ff4d4f" />
-                </TouchableOpacity>
-            }
-
-        </View>
-    );
     const handleCallPhone = (phone: string) => {
         Alert.alert(
             'Gọi điện',
@@ -217,6 +189,35 @@ const InspectorScreen = () => {
         );
     };
 
+    // Render helpers
+    const renderInspectorItem = ({ item }: { item: Inspector }) => (
+        <View style={styles.guardianItem}>
+            <View style={styles.info}>
+                <Text style={styles.name}>{item.name}</Text>
+                <TouchableOpacity onPress={() => handleCallPhone(item.phoneNumber)}>
+                    <Text style={styles.details}>
+                        SĐT: <Text style={styles.phoneLink}>{item.phoneNumber}</Text>
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {dataProfile?.role === 'parent' && (
+                <View style={styles.actions}>
+                    <TouchableOpacity onPress={() => openSheet(item)} style={styles.actionButton}>
+                        <Icon name="pencil" size={20} color="#4f3f97" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => handleDeleteInspector(item.id)}
+                        style={styles.actionButton}
+                    >
+                        <Icon name="delete" size={20} color="#ff4d4f" />
+                    </TouchableOpacity>
+                </View>
+            )}
+        </View>
+    );
+
+
 
     return (
         <KeyboardAvoidingView
@@ -227,14 +228,14 @@ const InspectorScreen = () => {
                 <View style={styles.container}>
                     <View style={styles.header}>
                         <Text style={styles.headerText}>Người giám sát</Text>
-                        <TouchableOpacity onPress={openSheet}>
+                        <TouchableOpacity onPress={() => openSheet()}>
                             <Icon name={'plus-circle'} size={22} color="#4f3f97" />
                         </TouchableOpacity>
                     </View>
 
                     <FlatList
                         data={listInspector}
-                        renderItem={renderItem}
+                        renderItem={renderInspectorItem}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.listContainer}
                     />
@@ -251,6 +252,7 @@ const InspectorScreen = () => {
                 style={styles.bottomSheet}
                 keyboardBehavior="interactive"
                 keyboardBlurBehavior="restore"
+                onClose={closeSheet}
             >
                 <BottomSheetView style={styles.bottomSheetContent}>
                     <Text style={styles.sheetTitle}>
@@ -292,7 +294,7 @@ const InspectorScreen = () => {
                     />
                     <ButtonCommon
                         title={editingId ? 'Cập nhật' : 'Thêm mới'}
-                        onPress={onCreateAsync}
+                        onPress={handleAddOrUpdateInspector}
                     />
 
                     <ButtonCommon
@@ -350,6 +352,13 @@ const styles = StyleSheet.create({
         color: '#ff4d4f',
         fontSize: 14,
         fontWeight: 'bold',
+    },
+    actions: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    actionButton: {
+        padding: 4,
     },
     bottomSheet: {
         borderRadius: 8,

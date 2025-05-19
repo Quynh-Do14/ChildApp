@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Linking, Platform, KeyboardAvoidingView,
 } from 'react-native';
@@ -8,79 +8,144 @@ import MainLayout from '../../infrastructure/common/layouts/layout';
 import InputTextCommon from '../../infrastructure/common/components/input/input-text-common';
 import ButtonCommon from '../../infrastructure/common/components/button/button-common';
 import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
-
-const fakeData = [
-    { id: '1', name: 'Chrome', url: 'https://chrome.com' },
-    { id: '2', name: 'YouTube', url: 'https://youtube.com' },
-];
+import blockService from '../../infrastructure/repositories/block/block.service';
+import { useRecoilValue } from 'recoil';
+import { ChildState } from '../../core/atoms/child/childState';
+import SelectCommon from '../../infrastructure/common/components/input/select-common';
 
 const WebBLockScreen = () => {
-    const [browserList, setBrowserList] = useState(fakeData);
-    const [dataRequest, setDataRequest] = useState<any>({});
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [validate, setValidate] = useState<any>({});
-    const [submittedTime, setSubmittedTime] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
+    const [_data, _setData] = useState<any>({});
+    const dataChildren = useRecoilValue(ChildState).data || [];
 
+    const dataRequest = _data;
+    const setDataRequest = (data: any) => {
+        Object.assign(_data, { ...data });
+        _setData({ ..._data });
+    };
+    const [validate, setValidate] = useState<Record<string, any>>({});
+    const [submittedTime, setSubmittedTime] = useState<number | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [browserList, setBrowerList] = useState<any[]>([]);
+
+    // Refs and constants
     const bottomSheetRef = useRef<BottomSheet>(null);
-    const snapPoints = useMemo(() => ['100%'], []);
+    const snapPoints = useMemo(() => ['90%'], []);
 
-    const openSheet = (item?: any) => {
-        if (item) {
-            setDataRequest({ ...item });
-            setEditingId(item.id);
-        } else {
-            setDataRequest({});
-            setEditingId(null);
+    const isValidData = () => {
+        let allRequestOK = true;
+        setValidate({ ...validate });
+
+        Object.values(validate).forEach((it: any) => {
+            if (it.isError === true) {
+                allRequestOK = false;
+            }
+        });
+
+        return allRequestOK;
+    };
+
+    // Data fetching
+    const fetchWeb = async (loadingState: boolean = true) => {
+        try {
+            const response = await blockService.getAll(
+                loadingState ? setLoading : setRefreshing
+            );
+            if (response) {
+                setBrowerList(response);
+            }
+        } catch (error) {
+            Alert.alert('Lỗi', 'Không thể tải danh sách trẻ');
+            console.error('Fetch children error:', error);
         }
-        setValidate({});
-        setSubmittedTime(null);
+    };
+
+    // Effects
+    useEffect(() => {
+        fetchWeb();
+    }, []);
+
+    const handleRefresh = () => {
+        fetchWeb(false);
+    };
+
+
+
+    // Bottom sheet handlers
+    const handleSheetChanges = useCallback((index: number) => {
+        if (index === -1) {
+            setEditingId(null);
+            setDataRequest({
+                appName: '',
+                childId: '',
+            });
+        }
+    }, []);
+
+    const openSheet = (child?: any) => {
+        if (child) {
+            setDataRequest({
+                appName: child.appName,
+                childId: child.childId,
+            });
+            setEditingId(child.id);
+        }
         bottomSheetRef.current?.expand();
     };
 
-    const closeSheet = () => {
-        bottomSheetRef.current?.close();
-        setEditingId(null);
-        setValidate({});
-        setSubmittedTime(null);
+    const closeSheet = () => bottomSheetRef.current?.close();
+
+    // Child CRUD operations
+    const handleAddOrUpdateChild = async () => {
+        if (!isValidData()) return;
+
+        try {
+            const data = {
+                appName: dataRequest.appName,
+                childId: dataRequest.childId,
+            };
+
+            const response = await blockService.createWeb(data, setLoading);
+
+            if (response) {
+                await fetchWeb();
+                closeSheet();
+            }
+        } catch (error) {
+            Alert.alert('Lỗi', 'Tạo mới thất bại');
+            console.error('Child operation error:', error);
+        }
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Xoá trình duyệt', 'Bạn có chắc muốn xoá mục này?', [
-            { text: 'Huỷ' },
+        Alert.alert('Xác nhận', 'Bạn có chắc muốn xoá trẻ này?', [
+            { text: 'Hủy', style: 'cancel' },
             {
-                text: 'Xoá',
-                onPress: () => setBrowserList(prev => prev.filter(item => item.id !== id)),
-                style: 'destructive',
+                text: 'Xóa',
+                onPress: async () => {
+                    try {
+                        const response = await blockService.deleteWeb(id, setLoading);
+                        if (response) {
+                            await fetchWeb();
+                        }
+                    } catch (error) {
+                        Alert.alert('Lỗi', 'Xóa trẻ thất bại');
+                        console.error('Delete child error:', error);
+                    }
+                },
             },
         ]);
     };
-
-    const onCreateAsync = () => {
-        setSubmittedTime(Date.now());
-        const isValid = dataRequest.name && dataRequest.url;
-        if (!isValid) return;
-
-        if (editingId) {
-            setBrowserList(prev =>
-                prev.map(item => (item.id === editingId ? { ...dataRequest, id: editingId } : item))
-            );
-        } else {
-            setBrowserList(prev => [
-                ...prev,
-                { ...dataRequest, id: Date.now().toString() },
-            ]);
-        }
-        closeSheet();
-    };
-
     const renderItem = ({ item }: any) => (
         <View style={styles.browserItem}>
             <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
-                <TouchableOpacity onPress={() => handleOpenUrl(item.url)}>
+                <TouchableOpacity onPress={() => handleOpenUrl(item.appName)}>
                     <Text style={styles.details}>
-                        URL: <Text style={styles.link}>{item.url}</Text>
+                        URL: <Text style={styles.link}>{item.appName}</Text>
+                    </Text>
+                    <Text style={styles.details}>
+                        {item.child.name}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -144,24 +209,12 @@ const WebBLockScreen = () => {
             >
                 <BottomSheetView style={styles.bottomSheetContent}>
                     <Text style={styles.sheetTitle}>
-                        {editingId ? 'Cập nhật trình duyệt' : 'Thêm trình duyệt mới'}
+                        Thêm trình duyệt mới
                     </Text>
-
-                    <InputTextCommon
-                        label="Tên trình duyệt"
-                        attribute="name"
-                        dataAttribute={dataRequest.name}
-                        setData={setDataRequest}
-                        isRequired={true}
-                        editable={true}
-                        validate={validate}
-                        setValidate={setValidate}
-                        submittedTime={submittedTime}
-                    />
                     <InputTextCommon
                         label="Đường dẫn URL"
-                        attribute="url"
-                        dataAttribute={dataRequest.url}
+                        attribute="appName"
+                        dataAttribute={dataRequest.appName}
                         setData={setDataRequest}
                         isRequired={true}
                         editable={true}
@@ -169,9 +222,20 @@ const WebBLockScreen = () => {
                         setValidate={setValidate}
                         submittedTime={submittedTime}
                     />
+                    <SelectCommon
+                        label="Trẻ em"
+                        attribute="childId"
+                        dataAttribute={dataRequest.childId}
+                        setData={setDataRequest}
+                        isRequired={true}
+                        validate={validate}
+                        setValidate={setValidate}
+                        submittedTime={submittedTime}
+                        listArray={dataChildren}
+                    />
                     <ButtonCommon
-                        title={editingId ? 'Cập nhật' : 'Thêm mới'}
-                        onPress={onCreateAsync}
+                        title={'Thêm mới'}
+                        onPress={handleAddOrUpdateChild}
                     />
                     <ButtonCommon title="Đóng" onPress={closeSheet} />
                 </BottomSheetView>

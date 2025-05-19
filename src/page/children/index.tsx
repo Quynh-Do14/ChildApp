@@ -10,34 +10,37 @@ import InputPasswordCommon from '../../infrastructure/common/components/input/in
 import userService from '../../infrastructure/repositories/user/user.service';
 import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
 
-const ChildrenScreen = () => {
-    const [_data, _setData] = useState<any>({});
-    const [validate, setValidate] = useState<any>({});
-    const [submittedTime, setSubmittedTime] = useState<any>(null);
-    const [editingId, setEditingId] = useState<string | null>(null);
+type Child = {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    accessCode: string;
+};
 
-    const [loading, setLoading] = useState<boolean>(false);
-    const [childrenList, setChildrenList] = useState<any[]>([])
+type ChildFormData = {
+    name: string;
+    phoneNumber: string;
+};
+
+
+const ChildrenScreen = () => {
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [_data, _setData] = useState<any>({});
 
     const dataRequest = _data;
     const setDataRequest = (data: any) => {
         Object.assign(_data, { ...data });
         _setData({ ..._data });
     };
+    const [validate, setValidate] = useState<Record<string, any>>({});
+    const [submittedTime, setSubmittedTime] = useState<number | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [childrenList, setChildrenList] = useState<Child[]>([]);
 
-    const GetMyChildrenAsync = async () => {
-        try {
-            await userService.getChild(
-                setLoading,
-            ).then((response) => {
-                if (response) {
-                    setChildrenList(response)
-                }
-            });
-        } catch (error) {
-            console.error(error);
-        }
-    };
+    // Refs and constants
+    const bottomSheetRef = useRef<BottomSheet>(null);
+    const snapPoints = useMemo(() => ['90%'], []);
 
     const isValidData = () => {
         let allRequestOK = true;
@@ -52,77 +55,117 @@ const ChildrenScreen = () => {
         return allRequestOK;
     };
 
-    useEffect(() => {
-        GetMyChildrenAsync().then(() => { });
-    }, []);
-
-    const onCreateChildAsync = async () => {
-        if (isValidData()) {
-            try {
-                await userService.createUser(
-                    {
-                        name: dataRequest.name,
-                        phoneNumber: dataRequest.phoneNumber,
-                    },
-                    setLoading,
-                ).then((response) => {
-                    if (response) {
-                        GetMyChildrenAsync();
-                        closeSheet();
-                    }
-                });
-            } catch (error) {
-                console.error(error);
+    // Data fetching
+    const fetchChildren = async (loadingState: boolean = true) => {
+        try {
+            const response = await userService.getChild(
+                loadingState ? setLoading : setRefreshing
+            );
+            if (response) {
+                setChildrenList(response);
             }
+        } catch (error) {
+            Alert.alert('Lỗi', 'Không thể tải danh sách trẻ');
+            console.error('Fetch children error:', error);
         }
     };
 
-    const bottomSheetRef = useRef<BottomSheet>(null);
-    const snapPoints = useMemo(() => ['90%'], []);
+    // Effects
+    useEffect(() => {
+        fetchChildren();
+    }, []);
+
+    const handleRefresh = () => {
+        fetchChildren(false);
+    };
+
+
+
+    // Bottom sheet handlers
     const handleSheetChanges = useCallback((index: number) => {
         if (index === -1) {
             setEditingId(null);
+            setDataRequest({
+                name: '',
+                phoneNumber: '',
+            });
         }
     }, []);
 
-    const openSheet = (child?: any) => {
+    const openSheet = (child?: Child) => {
         if (child) {
-            setDataRequest({ ...child });
+            setDataRequest({
+                name: child.name,
+                phoneNumber: child.phoneNumber,
+            });
             setEditingId(child.id);
-        } else {
-            setDataRequest({});
-            setEditingId(null);
         }
         bottomSheetRef.current?.expand();
     };
-    
-    const closeSheet = () => {
-        bottomSheetRef.current?.close();
-        setEditingId(null);
+
+    const closeSheet = () => bottomSheetRef.current?.close();
+
+    // Child CRUD operations
+    const handleAddOrUpdateChild = async () => {
+        if (!isValidData()) return;
+
+        try {
+            const childData = {
+                name: dataRequest.name,
+                phoneNumber: dataRequest.phoneNumber,
+            };
+
+            const response = editingId
+                ? await userService.updateUser(editingId, childData, setLoading)
+                : await userService.createUser(childData, setLoading);
+
+            if (response) {
+                await fetchChildren();
+                closeSheet();
+            }
+        } catch (error) {
+            Alert.alert('Lỗi', editingId ? 'Cập nhật thất bại' : 'Tạo mới thất bại');
+            console.error('Child operation error:', error);
+        }
     };
 
-    const handleDelete = (id: string) => {
-        Alert.alert('Xoá trẻ', 'Bạn có chắc muốn xoá trẻ này?', [
-            { text: 'Huỷ' },
+    const handleDeleteChild = (id: string) => {
+        Alert.alert('Xác nhận', 'Bạn có chắc muốn xoá trẻ này?', [
+            { text: 'Hủy', style: 'cancel' },
             {
-                text: 'Xoá',
-                onPress: () => setChildrenList(prev => prev.filter(item => item.id !== id)),
-                style: 'destructive',
+                text: 'Xóa',
+                onPress: async () => {
+                    try {
+                        const response = await userService.deleteUser(id, setLoading);
+                        if (response) {
+                            await fetchChildren();
+                        }
+                    } catch (error) {
+                        Alert.alert('Lỗi', 'Xóa trẻ thất bại');
+                        console.error('Delete child error:', error);
+                    }
+                },
             },
         ]);
     };
 
-    const renderItem = ({ item }: any) => (
+    // Render helpers
+    const renderChildItem = ({ item }: { item: Child }) => (
         <View style={styles.childItem}>
-            <View>
+            <View style={styles.childInfo}>
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.details}>Mã: {item.accessCode} | SĐT: {item.phoneNumber}</Text>
+                <Text style={styles.details}>
+                    Mã: {item.accessCode} | SĐT: {item.phoneNumber}
+                </Text>
             </View>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity onPress={() => openSheet(item)}>
+            <View style={styles.actions}>
+                <TouchableOpacity onPress={() => openSheet(item)} style={styles.actionButton}>
                     <Icon name="pencil" size={20} color="#4f3f97" />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                <TouchableOpacity
+                    onPress={() => handleDeleteChild(item.id)}
+                    style={styles.actionButton}
+                >
                     <Icon name="delete" size={20} color="#ff4d4f" />
                 </TouchableOpacity>
             </View>
@@ -144,7 +187,7 @@ const ChildrenScreen = () => {
 
                     <FlatList
                         data={childrenList}
-                        renderItem={renderItem}
+                        renderItem={renderChildItem}
                         keyExtractor={item => item.id}
                     />
 
@@ -189,7 +232,7 @@ const ChildrenScreen = () => {
                             />
                             <ButtonCommon
                                 title={editingId ? 'Cập nhật' : 'Thêm mới'}
-                                onPress={onCreateChildAsync}
+                                onPress={handleAddOrUpdateChild}
                             />
                             <ButtonCommon title="Đóng" onPress={closeSheet} />
                         </View>
@@ -228,6 +271,9 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderColor: '#eee',
     },
+    childInfo: {
+        flex: 1,
+    },
     name: {
         fontSize: 16,
         fontWeight: '600',
@@ -238,6 +284,13 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 2,
     },
+    actions: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    actionButton: {
+        padding: 4,
+    },
     bottomSheet: {
         borderRadius: 8,
         borderWidth: 1,
@@ -245,7 +298,7 @@ const styles = StyleSheet.create({
     },
     bottomSheetContent: {
         gap: 16,
-        flex: 1
+        padding: 16,
     },
     sheetTitle: {
         fontSize: 18,

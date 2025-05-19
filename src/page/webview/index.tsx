@@ -1,20 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { WebView } from 'react-native-webview';
 import MainLayout from '../../infrastructure/common/layouts/layout';
 import { Alert, Button, TextInput, View } from 'react-native';
-
-const blockedLinks = [
-    'https://www.facebook.com/',
-    'https://www.instagram.com/',
-    'https://www.youtube.com/',
-];
-
-const isBlockedUrl = (url: string) => {
-    return blockedLinks.some((blocked) => url.includes(blocked));
-};
+import blockService from '../../infrastructure/repositories/block/block.service';
 
 const WebiewScreen = () => {
+    const [loading, setLoading] = useState<boolean>(false);
+    const [refreshing, setRefreshing] = useState<boolean>(false);
+    const [browserList, setBrowerList] = useState<string[]>([]);
     const currentUrl = "https://www.google.com";
+    const fetchWeb = async (loadingState: boolean = true) => {
+        try {
+            const response = await blockService.getByChild(
+                loadingState ? setLoading : setRefreshing
+            );
+            if (response) {
+                setBrowerList(response?.map((item: any) => item.appName));
+            }
+        } catch (error) {
+            Alert.alert('Lỗi', 'Không thể tải danh sách trẻ');
+            console.error('Fetch children error:', error);
+        }
+    };
+
+    // Effects
+    useEffect(() => {
+        fetchWeb();
+    }, []);
+
+    const isBlockedUrl = (url: string) => {
+        return browserList.some((blocked) => url.includes(blocked));
+    };
+    console.log("browserList", browserList);
+
     return (
         <MainLayout title={'Trình duyệt'}>
             <View style={{ flex: 1 }}>

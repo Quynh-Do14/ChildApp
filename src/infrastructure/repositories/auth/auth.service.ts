@@ -33,6 +33,7 @@ class AuthService {
 
 
     async loginOTP(otp: string, setLoading: Function) {
+        console.log("otp", otp);
         setLoading(true);
         try {
             return await RequestService
@@ -41,8 +42,9 @@ class AuthService {
                 )
                 .then(async response => {
                     if (response) {
+                        console.log("response", response);
                         await saveToken(
-                            response.accessToken,
+                            response.refreshToken,
                         );
 
                         await this.registerFCMTokenAfterLogin(response.userProfile.email);

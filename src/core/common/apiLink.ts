@@ -29,7 +29,7 @@ export class Endpoint {
         static Update = "/missions/parent/update"
         static Complete = "/missions/child/complete"
         static Confirm = "/missions/parent/confirm"
-        static  Delete = "/missions/parent/delete"
+        static Delete = "/missions/parent/delete"
     }
     static Inspector = class {
         static Get = "/api/guardians"
@@ -42,5 +42,11 @@ export class Endpoint {
         static RegisterToken = "/device-tokens/register"
         static UnregisterToken = "/device-tokens/unregister"
         static RegisterTokenEmail = "/device-tokens/register-email"
+    }
+    static BlockWeb = class {
+        static Get = "/blocked/all/web"
+        static GetByChild = "/blocked/all/web/child"
+        static Create = "/blocked/web/add"
+        static Delete = "/blocked/app/delete"
     }
 };

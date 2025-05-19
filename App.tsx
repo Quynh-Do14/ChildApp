@@ -40,26 +40,27 @@ const StackNavigator = () => {
   useEffect(() => {
     checkToken();
   }, []);
-
-  return (
-    <Stack.Navigator
-      initialRouteName={"LoginScreen"}
-      screenOptions={{ headerShown: false }}
-    >
-      <Stack.Screen
-        name={"DrawerMenu"}
-        component={DrawerMenu}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen name={Constants.Navigator.Auth.LoginScreen.value} component={LoginScreen} />
-      <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
-      <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
-      <Stack.Screen name={"EditProfile"} component={EditProfile} />
-      <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
-      <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
-      <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
-    </Stack.Navigator>
-  );
+  if (initialRoute) {
+    return (
+      <Stack.Navigator
+        initialRouteName={initialRoute}
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen
+          name={"DrawerMenu"}
+          component={DrawerMenu}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name={Constants.Navigator.Auth.LoginScreen.value} component={LoginScreen} />
+        <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
+        <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
+        <Stack.Screen name={"EditProfile"} component={EditProfile} />
+        <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
+        <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
+        <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
+      </Stack.Navigator>
+    );
+  };
 };
 
 function App(): React.JSX.Element {

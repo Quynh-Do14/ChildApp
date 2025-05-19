@@ -1,12 +1,12 @@
 import { Endpoint } from "../../../core/common/apiLink";
 import { RequestService } from "../../utils/response";
 
-class UserService {
-    async getChild(setLoading: Function) {
+class BlockService {
+    async getAll(setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.User.MyChild,
+                get(Endpoint.BlockWeb.Get,
                 ).then(response => {
                     return response;
                 });
@@ -17,11 +17,11 @@ class UserService {
             setLoading(false);
         }
     }
-    async getParent(setLoading: Function) {
+    async getByChild(setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.User.MyParent,
+                get(Endpoint.BlockWeb.GetByChild,
                 ).then(response => {
                     return response;
                 });
@@ -32,11 +32,11 @@ class UserService {
             setLoading(false);
         }
     }
-    async createUser(data: any, setLoading: Function) {
+    async createWeb(data: any, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                postForm(Endpoint.User.Create,
+                post(Endpoint.BlockWeb.Create,
                     data
                 ).then(response => {
                     return response;
@@ -48,27 +48,27 @@ class UserService {
             setLoading(false);
         }
     }
-    async updateUser(id: string, data: any, setLoading: Function) {
+    // async updateWeb(id: string, data: any, setLoading: Function) {
+    //     setLoading(true)
+    //     try {
+    //         return await RequestService.
+    //             put(`${Endpoint.Web.Update}/${id}`,
+    //                 data
+    //             ).then(response => {
+    //                 return response;
+    //             });
+    //     }
+    //     catch (error) {
+    //         console.log(error)
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }
+    async deleteWeb(id: string, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                putForm(`${Endpoint.User.Update}/${id}`,
-                    data
-                ).then(response => {
-                    return response;
-                });
-        }
-        catch (error) {
-            console.log(error)
-        } finally {
-            setLoading(false);
-        }
-    }
-    async deleteUser(id: string, setLoading: Function) {
-        setLoading(true)
-        try {
-            return await RequestService.
-                delete(`${Endpoint.User.Delete}/${id}`,
+                delete(`${Endpoint.BlockWeb.Delete}/${id}`,
                 ).then(response => {
                     return response;
                 });
@@ -81,4 +81,4 @@ class UserService {
     }
 }
 
-export default new UserService();
+export default new BlockService();

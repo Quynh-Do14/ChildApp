@@ -35,8 +35,6 @@ const OtpVerificationScreen = () => {
 
     const handleVerifyOtp = async () => {
         const fullOtp = otp.join('');
-        if (fullOtp.length < otpLength) return;
-
         try {
             setLoading(true);
             // TODO: Gọi API xác thực OTP tại đây
@@ -45,6 +43,8 @@ const OtpVerificationScreen = () => {
                 setLoading
             ).then((response) => {
                 if (response) {
+                    console.log("response", response);
+
                     navigation.replace('DrawerMenu');
                 }
             });
