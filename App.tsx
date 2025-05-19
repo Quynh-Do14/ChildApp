@@ -104,7 +104,7 @@ function App(): React.JSX.Element {
   const [notification, setNotification] = useState<any>(null);
   const [pendingNotification, setPendingNotification] = useState<any>(null);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
   // Tham chiếu đến đối tượng NavigationContainer
   // const navigationRef = React.useRef(null);
 
@@ -134,16 +134,9 @@ function App(): React.JSX.Element {
                 });
 
                 // Xử lý điều hướng nếu cần
-                if (
-                  remoteMessage.data &&
-                  remoteMessage.data.screen
-                ) {
-                  // Sử dụng navigationRef để điều hướng
-                  // @ts-ignore
-                  navigation.navigate({
-                    name: remoteMessage.data.screen,
-                    params: remoteMessage.data.params,
-                  });
+                if (remoteMessage.data && remoteMessage.data.screen) {
+                  // 🔄 Sửa: Sử dụng navigate thay vì navigation.navigate
+                  navigate(remoteMessage.data.screen, remoteMessage.data.params);
                   console.log('Navigating to:', remoteMessage.data.screen);
                 }
               }
@@ -178,7 +171,7 @@ function App(): React.JSX.Element {
     };
 
     initFCM();
-  }, [navigation]);
+  }, []);
 
   // Kiểm tra navigation ref
   useEffect(() => {
@@ -242,7 +235,7 @@ function App(): React.JSX.Element {
     const attemptNavigation = (attempt = 1, maxAttempts = 5) => {
       console.log(`Navigation attempt ${attempt}/${maxAttempts}`);
 
-      if (navigation) {
+      if (navigationRef.current) {
         try {
           const isCallHandled =
             fcmService.handleCallNotification(pendingNotification);
@@ -265,14 +258,14 @@ function App(): React.JSX.Element {
     if (pendingNotification) {
       attemptNavigation();
     }
-  }, [isNavigationReady, navigation, pendingNotification]); // Thêm cả hai dependencies
+  }, [isNavigationReady, pendingNotification]); // Thêm cả hai dependencies
 
   // Phần return trong App.tsx
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <RecoilRoot>
         <NavigationContainer
-          // ref={navigationRef}
+          ref={navigationRef}
           onReady={() => {
             console.log('Navigation container is now ready!');
             setNavigationReady(); // Gọi hàm từ navigator.ts
