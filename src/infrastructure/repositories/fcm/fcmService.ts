@@ -120,18 +120,17 @@ class FCMService {
    * Thiết lập các bộ lắng nghe cho thông báo
    */
   setupMessageListeners(onNotificationReceived: any) {
-    // Xử lý thông báo khi ứng dụng đang chạy ở foreground - chỉ một listener
-    const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
-      console.log('Foreground notification received:', remoteMessage);
-
-      // Nếu là thông báo cuộc gọi
-      if (remoteMessage.data && remoteMessage.data.type === 'call') {
-        try {
+    // Hàm xử lý thông báo cuộc gọi chung
+    const handleCallNotification = (remoteMessage: any) => {
+      try {
+        if (remoteMessage.data && remoteMessage.data.type === 'call') {
           // Xác định và phân tích callData
           const callData =
             typeof remoteMessage.data.callData === 'string'
               ? JSON.parse(remoteMessage.data.callData)
               : remoteMessage.data.callData;
+
+          console.log('Processing call notification with data:', callData);
 
           // Điều hướng đến màn hình cuộc gọi đến
           if (navigationRef && navigationRef.current) {
@@ -140,12 +139,27 @@ class FCMService {
               channelId: callData.channelId,
               callerImage: callData.callerImage,
             });
+            return true; // Đã xử lý thông báo cuộc gọi
+          } else {
+            console.error('Navigation reference is not available');
           }
-        } catch (error) {
-          console.error('Error processing call notification:', error);
         }
-      } else {
-        // Xử lý các thông báo thông thường
+        return false; // Không phải thông báo cuộc gọi
+      } catch (error) {
+        console.error('Error processing call notification:', error);
+        return false;
+      }
+    };
+
+    // Xử lý thông báo khi ứng dụng đang chạy ở foreground
+    const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
+      console.log('Foreground notification received:', remoteMessage);
+      
+      // Thử xử lý như thông báo cuộc gọi trước
+      const isCallHandled = handleCallNotification(remoteMessage);
+      
+      // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
+      if (!isCallHandled) {
         onNotificationReceived(remoteMessage);
       }
     });
@@ -153,7 +167,14 @@ class FCMService {
     // Xử lý khi user nhấn vào thông báo và mở ứng dụng từ background
     const unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
       console.log('Notification opened app from background:', remoteMessage);
-      onNotificationReceived(remoteMessage);
+      
+      // Thử xử lý như thông báo cuộc gọi trước
+      const isCallHandled = handleCallNotification(remoteMessage);
+      
+      // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
+      if (!isCallHandled) {
+        onNotificationReceived(remoteMessage);
+      }
     });
 
     // Xử lý khi ứng dụng được mở từ trạng thái đóng hoàn toàn
@@ -162,7 +183,14 @@ class FCMService {
       .then(remoteMessage => {
         if (remoteMessage) {
           console.log('App opened from quit state by notification:', remoteMessage);
-          onNotificationReceived(remoteMessage);
+          
+          // Thử xử lý như thông báo cuộc gọi trước
+          const isCallHandled = handleCallNotification(remoteMessage);
+          
+          // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
+          if (!isCallHandled && remoteMessage) {
+            onNotificationReceived(remoteMessage);
+          }
         }
       });
 
