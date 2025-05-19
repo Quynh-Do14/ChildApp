@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { createNavigationContainerRef, NavigationContainer, useNavigation } from '@react-navigation/native';
 import Constants from './src/core/common/constants';
 import { RecoilRoot } from 'recoil';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,6 +24,7 @@ import {
 } from './src/core/common/navigator';
 import CallHistoryScreen from './src/page/call/CallHistoryScreen';
 import messaging from '@react-native-firebase/messaging';
+import { TouchableOpacity, Text } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -106,7 +107,6 @@ function App(): React.JSX.Element {
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   // const navigation = useNavigation();
   // Tham chiếu đến đối tượng NavigationContainer
-  // const navigationRef = React.useRef(null);
 
   useEffect(() => {
     // Khởi tạo FCM khi app khởi động
@@ -237,24 +237,83 @@ function App(): React.JSX.Element {
               title={notification.title}
               message={notification.body}
               onPress={() => {
-                console.log('Notification pressed:', notification.data);
-                if (notification.data?.type === 'call') {
-                  // Sử dụng hàm navigate từ navigator.ts
-                  navigate('IncomingCallScreen', {
-                    callerName:
-                      notification.data?.callData?.callerName || 'Unknown',
-                    channelId: notification.data?.callData?.channelId,
-                    callerImage:
-                      notification.data?.callData?.callerImage || null,
-                  });
-                } else if (notification.data?.screen) {
-                  // Cũng sử dụng hàm navigate
-                  navigate(notification.data.screen, notification.data.params);
+                console.log('Notification pressed:', JSON.stringify(notification.data));
+                try {
+                  if (notification.data?.type === 'call') {
+                    // Xử lý nhiều định dạng dữ liệu có thể có
+                    let callData;
+
+                    if (notification.data.callData) {
+                      // Trường hợp 1: callData là string JSON
+                      if (typeof notification.data.callData === 'string') {
+                        try {
+                          callData = JSON.parse(notification.data.callData);
+                        } catch (e) {
+                          console.error('Error parsing callData string:', e);
+                          callData = { channelId: notification.data.callData };
+                        }
+                      }
+                      // Trường hợp 2: callData là object
+                      else {
+                        callData = notification.data.callData;
+                      }
+                    } 
+                    // Trường hợp 3: callData là các trường riêng biệt
+                    else if (notification.data.channelId) {
+                      callData = {
+                        callerName: notification.data.callerName || "Unknown",
+                        channelId: notification.data.channelId,
+                        callerImage: notification.data.callerImage
+                      };
+                    }
+                    
+                    console.log('Processed call data:', callData);
+                    if (callData && callData.channelId) {
+                      console.log('Attempting navigation to IncomingCallScreen with:', callData);
+                      
+                      // Thêm timeout để đảm bảo UI đã sẵn sàng
+                      setTimeout(() => {
+                        navigate('IncomingCallScreen', {
+                          callerName: callData.callerName || "Unknown",
+                          channelId: callData.channelId,
+                          callerImage: callData.callerImage || null,
+                        });
+                      }, 100);
+                    } else {
+                      console.error('Invalid call data structure:', notification.data);
+                    }
+                  } else if (notification.data?.screen) {
+                    navigate(notification.data.screen, notification.data.params);
+                  }
+                  setNotification(null);
+                } catch (error) {
+                  console.error('Error handling notification press:', error);
                 }
-                setNotification(null);
               }}
               onClose={() => setNotification(null)}
             />
+          )}
+          {/* Thêm vào NavigationContainer trong App.tsx - để debug */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                bottom: 20,
+                right: 20,
+                backgroundColor: 'red',
+                padding: 10,
+                borderRadius: 5,
+              }}
+              onPress={() => {
+                console.log('Debug: Simulating call notification click');
+                navigate('IncomingCallScreen', {
+                  callerName: 'Test Caller',
+                  channelId: 'test-channel-1',
+                  callerImage: null,
+                });
+              }}>
+              <Text style={{color: 'white'}}>Test Call Nav</Text>
+            </TouchableOpacity>
           )}
         </NavigationContainer>
       </RecoilRoot>

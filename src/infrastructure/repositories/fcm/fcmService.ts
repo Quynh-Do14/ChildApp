@@ -113,29 +113,42 @@ class FCMService {
   // Sửa phương thức handleCallNotification
   handleCallNotification = (remoteMessage: any) => {
     try {
-      console.log('FCM - Checking notification type:', remoteMessage?.data?.type);
-
-      if (remoteMessage.data && remoteMessage.data.type === 'call') {
-        // Xử lý dữ liệu cuộc gọi
-        const callData =
-          typeof remoteMessage.data.callData === 'string'
-            ? JSON.parse(remoteMessage.data.callData)
-            : remoteMessage.data.callData;
-
-        console.log('FCM - Processing call notification with data:', callData);
-
-        // SỬ DỤNG navigate() thay vì navigationRef.current.navigate()
-        navigate('IncomingCallScreen', {
-          callerName: callData.callerName,
-          channelId: callData.channelId,
-          callerImage: callData.callerImage || null,
-        });
-        
-        return true;
+      console.log('FCM - FULL DATA:', JSON.stringify(remoteMessage, null, 2));
+      
+      // Check multiple data structures
+      if (remoteMessage.data?.type === 'call') {
+        let callData: any;
+        try {
+          if (typeof remoteMessage.data.callData === 'string') {
+            callData = JSON.parse(remoteMessage.data.callData);
+          } else if (remoteMessage.data.callData) {
+            callData = remoteMessage.data.callData;
+          } else if (remoteMessage.data.channelId) {
+            callData = {
+              callerName: remoteMessage.data.callerName || "Unknown",
+              channelId: remoteMessage.data.channelId,
+              callerImage: remoteMessage.data.callerImage
+            };
+          }
+          
+          if (callData && callData.channelId) {
+            console.log('Navigating to IncomingCallScreen with:', callData);
+            setTimeout(() => {
+              navigate('IncomingCallScreen', {
+                callerName: callData.callerName || "Unknown",
+                channelId: callData.channelId,
+                callerImage: callData.callerImage || null,
+              });
+            }, 300); // Thêm delay
+            return true;
+          }
+        } catch (e) {
+          console.error('Error processing callData:', e);
+        }
       }
       return false;
     } catch (error) {
-      console.error('FCM - Error processing call notification:', error);
+      console.error('Error in handleCallNotification:', error);
       return false;
     }
   };
