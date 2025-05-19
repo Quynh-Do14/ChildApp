@@ -27,6 +27,9 @@ const CallScreen = () => {
     const [isSpeakerOn, setIsSpeakerOn] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [callDuration, setCallDuration] = useState(0);
+    const [callState, setCallState] = useState<'connecting' | 'connected' | 'ended'>('connecting');
+    const [showNetworkWarning, setShowNetworkWarning] = useState(false);
+    const [remoteMuted, setRemoteMuted] = useState(false);
 
     // Timer cho thời lượng cuộc gọi
     useEffect(() => {
@@ -51,6 +54,7 @@ const CallScreen = () => {
     const handleUserJoined = useCallback((uid: any) => {
         console.log('User joined:', uid);
         setIsConnected(true);
+        callService.setCallConnected();
     }, []);
 
     // Define endCall function first
@@ -89,6 +93,32 @@ const CallScreen = () => {
         setupCall();
     }, [channelId, isIncoming, handleUserJoined, handleUserOffline]);
 
+    // Đăng ký callback cho chất lượng mạng
+    useEffect(() => {
+        const networkQualityCallback = (
+            uid: number,
+            txQuality: number,
+            rxQuality: number
+        ) => {
+            // txQuality và rxQuality từ 0 (chất lượng tốt) đến 5 (chất lượng kém)
+            if (rxQuality > 3) {
+                // Hiển thị cảnh báo chất lượng mạng kém
+                setShowNetworkWarning(true);
+            } else {
+                setShowNetworkWarning(false);
+            }
+        };
+
+        callService.engine?.addListener(
+            'NetworkQuality',
+            networkQualityCallback
+        );
+
+        return () => {
+            callService.engine?.removeListener('NetworkQuality');
+        };
+    }, []);
+
     // Bật/tắt micro
     const toggleMute = async () => {
         await callService.engine.muteLocalAudioStream(!isMuted);
@@ -101,13 +131,44 @@ const CallScreen = () => {
         setIsSpeakerOn(!isSpeakerOn);
     };
 
+    useEffect(() => {
+        // Lắng nghe sự kiện người dùng tắt mic
+        const audioStateChanged = (uid: number, muted: boolean) => {
+            if (uid !== 0) { // Không phải người dùng hiện tại
+                setRemoteMuted(muted);
+            }
+        };
+
+        callService.engine?.addListener('AudioStateChanged', audioStateChanged);
+
+        return () => {
+            callService.engine?.removeListener('AudioStateChanged');
+        };
+    }, []);
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.name}>{recipientName}</Text>
-                {isConnected && <Text style={styles.status}>{formatTime(callDuration)}</Text>}
-                {!isConnected && <Text style={styles.status}>{isIncoming ? 'Đang gọi đến...' : 'Đang gọi...'}</Text>}
+                <Text style={styles.status}>
+                    {callState === 'connecting' && 'Đang kết nối...'}
+                    {callState === 'connected' && formatTime(callDuration)}
+                    {callState === 'ended' && 'Cuộc gọi đã kết thúc'}
+                </Text>
             </View>
+
+            {showNetworkWarning && (
+                <View style={styles.networkWarning}>
+                    <Text style={styles.warningText}>Chất lượng mạng kém</Text>
+                </View>
+            )}
+
+            {remoteMuted && (
+                <View style={styles.mutedIndicator}>
+                    <Icon name="mic-off" size={20} color="#fff" />
+                    <Text style={styles.mutedText}>Người dùng đã tắt mic</Text>
+                </View>
+            )}
 
             <View style={styles.controlsContainer}>
                 <TouchableOpacity style={styles.controlButton} onPress={toggleMute}>
@@ -147,6 +208,29 @@ const styles = StyleSheet.create({
         color: '#aaa',
         fontSize: 16,
         marginTop: 8,
+    },
+    networkWarning: {
+        backgroundColor: '#ffcc00',
+        padding: 10,
+        borderRadius: 5,
+        margin: 20,
+    },
+    warningText: {
+        color: '#1c1c1c',
+        textAlign: 'center',
+        fontWeight: 'bold',
+    },
+    mutedIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ff3b30',
+        padding: 10,
+        borderRadius: 5,
+        margin: 20,
+    },
+    mutedText: {
+        color: '#fff',
+        marginLeft: 5,
     },
     controlsContainer: {
         flex: 1,

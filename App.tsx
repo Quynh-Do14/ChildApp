@@ -18,6 +18,7 @@ import InAppNotification from './src/page/notification/InAppNotification';
 import CallScreen from './src/page/call/CallScreen';
 import IncomingCallScreen from './src/page/call/IncomingCallScreen';
 import { navigationRef } from './src/core/common/navigator';
+import CallHistoryScreen from './src/page/call/CallHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -64,6 +65,7 @@ const StackNavigator = () => {
       <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
       <Stack.Screen name="CallScreen" component={CallScreen} options={{ headerShown: false }} />
       <Stack.Screen name="IncomingCallScreen" component={IncomingCallScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CallHistoryScreen" options={{ headerShown: true, title: "Lịch sử cuộc gọi" }} component={CallHistoryScreen} />
     </Stack.Navigator>
     // </NavigationContainer>
   );

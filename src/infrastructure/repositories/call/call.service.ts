@@ -1,5 +1,5 @@
 import RtcEngine from 'react-native-agora';
-import { Platform, PermissionsAndroid } from 'react-native';
+import { Platform, PermissionsAndroid, Alert } from 'react-native';
 import { requestMultiple, PERMISSIONS } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Endpoint } from '../../../core/common/apiLink';
@@ -7,6 +7,8 @@ import { Endpoint } from '../../../core/common/apiLink';
 class CallService {
     engine: any;
     appId: string = 'bd75f190073641d38c551b244817a2b1'; // Đăng ký trên agora.io
+    isCallConnected: boolean = false;
+    callTimeout: NodeJS.Timeout | null = null;
 
     constructor() {
         this.engine = null;
@@ -90,13 +92,36 @@ class CallService {
                 },
                 body: JSON.stringify({
                     recipientId: recipientId,
-                })
+                }),
             });
 
             const { channelId } = await response.json();
 
             // Tham gia kênh
-            return await this.joinChannel(channelId);
+            const joinResult = await this.joinChannel(channelId);
+
+            // Thêm timeout cho cuộc gọi đi
+            const callTimeout = setTimeout(async () => {
+                // Nếu vẫn đang gọi (chưa được kết nối)
+                if (this.engine && !this.isCallConnected) {
+                    await this.endCall();
+                    // Gọi API để cập nhật trạng thái cuộc gọi là "MISSED"
+                    await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}&status=MISSED`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${userToken}`
+                        }
+                    });
+                    
+                    // Thông báo cho người dùng
+                    Alert.alert('Không có phản hồi', 'Người dùng không trả lời cuộc gọi');
+                }
+            }, 30000); // 30 giây
+            
+            // Lưu timeout ID để có thể hủy nếu người dùng nhận cuộc gọi
+            this.callTimeout = callTimeout;
+
+            return joinResult;
         } catch (error) {
             console.error('Error starting call:', error);
             return false;
@@ -123,6 +148,14 @@ class CallService {
             await this.leaveChannel();
             await this.engine.destroy();
             this.engine = null;
+        }
+    }
+
+    setCallConnected() {
+        this.isCallConnected = true;
+        if (this.callTimeout) {
+            clearTimeout(this.callTimeout);
+            this.callTimeout = null;
         }
     }
 }
