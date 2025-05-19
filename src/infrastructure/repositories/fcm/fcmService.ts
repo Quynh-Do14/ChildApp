@@ -10,33 +10,30 @@ class FCMService {
    */
   async requestUserPermission() {
     try {
-      // Xử lý quyền cho Android 13+
-      if (Platform.OS === 'android' && Platform.Version >= 33) {
+      // Android 13+ (API level 33) requires POST_NOTIFICATIONS permission
+      if (Platform.OS === 'android' && parseInt(Platform.Version.toString()) >= 33) {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
         );
+        
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Notification permission denied');
+          console.warn('Notification permission denied for Android 13+');
           return false;
         }
       }
-
-      // Xử lý quyền cho iOS
+      
+      // iOS notification permissions
       if (Platform.OS === 'ios') {
         const authStatus = await messaging().requestPermission();
-        const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-        if (!enabled) {
-          console.log('Authorization status:', authStatus);
-          return false;
-        }
+        return (
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED || 
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL
+        );
       }
-
+      
       return true;
     } catch (error) {
-      console.log('Permission request error:', error);
+      console.error('Permission request error:', error);
       return false;
     }
   }
