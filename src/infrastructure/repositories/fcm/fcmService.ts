@@ -5,9 +5,6 @@ import { Endpoint } from '../../../core/common/apiLink';
 import { navigationRef } from '../../../core/common/navigator';
 
 class FCMService {
-  /**
-   * Yêu cầu quyền cho iOS và Android 13+
-   */
   async requestUserPermission() {
     try {
       // Android 13+ (API level 33) requires POST_NOTIFICATIONS permission
@@ -113,16 +110,64 @@ class FCMService {
     }
   }
 
-  /**
-   * Thiết lập các bộ lắng nghe cho thông báo
-   */
+  handleCallNotification = (remoteMessage: any) => {
+    try {
+      console.log('Checking notification type:', remoteMessage?.data?.type);
+
+      if (remoteMessage.data && remoteMessage.data.type === 'call') {
+        // Xử lý dữ liệu cuộc gọi
+        const callData =
+          typeof remoteMessage.data.callData === 'string'
+            ? JSON.parse(remoteMessage.data.callData)
+            : remoteMessage.data.callData;
+
+        console.log('Processing call notification with data:', callData);
+
+        // Điều hướng đến màn hình cuộc gọi đến
+        if (navigationRef && navigationRef.current) {
+          navigationRef.current.navigate('IncomingCallScreen', {
+            callerName: callData.callerName,
+            channelId: callData.channelId,
+            callerImage: callData.callerImage || null,
+          });
+          return true;
+        } else {
+          console.error('Navigation reference is not available');
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Error processing call notification:', error);
+      return false;
+    }
+  };
+
+  // Cần thêm logic retry trong handleCallNotification
+  navigateToCallScreen = (callData: any, retries = 5) => {
+    if (navigationRef.current) {
+      navigationRef.current.navigate('IncomingCallScreen', {
+        callerName: callData.callerName,
+        channelId: callData.channelId,
+        callerImage: callData.callerImage || null,
+      });
+      return true;
+    } else {
+      console.log(`Navigation ref not ready, retries left: ${retries}`);
+      if (retries > 0) {
+        setTimeout(() => this.navigateToCallScreen(callData, retries - 1), 300);
+      }
+      return false;
+    }
+  };
+
   setupMessageListeners(onNotificationReceived: any) {
     // Hàm xử lý thông báo cuộc gọi chung
-    const handleCallNotification = (remoteMessage: any) => {
+    this.handleCallNotification = (remoteMessage: any) => {
       try {
-        console.log('CHECK NOTIFICATION TYPE:', remoteMessage?.data?.type);
+        console.log('Checking notification type:', remoteMessage?.data?.type);
         
         if (remoteMessage.data && remoteMessage.data.type === 'call') {
+          // Xử lý dữ liệu cuộc gọi
           const callData =
             typeof remoteMessage.data.callData === 'string'
               ? JSON.parse(remoteMessage.data.callData)
@@ -130,29 +175,17 @@ class FCMService {
 
           console.log('Processing call notification with data:', callData);
 
-          // Thêm cơ chế retry với setTimeout
-          const navigateToCallScreen = (retries = 5) => {
-            if (navigationRef.current) {
-              console.log('Navigation ref ready, navigating to IncomingCallScreen');
-              navigationRef.current.navigate('IncomingCallScreen', {
-                callerName: callData.callerName,
-                channelId: callData.channelId,
-                callerImage: callData.callerImage,
-              });
-              return true;
-            } else {
-              console.log(`Navigation ref not ready, retries left: ${retries}`);
-              if (retries > 0) {
-                // Thử lại sau 300ms
-                setTimeout(() => navigateToCallScreen(retries - 1), 300);
-              } else {
-                console.error('Max retries reached, navigation ref still not available');
-              }
-              return false;
-            }
-          };
-
-          return navigateToCallScreen();
+          // Điều hướng đến màn hình cuộc gọi đến
+          if (navigationRef && navigationRef.current) {
+            navigationRef.current.navigate('IncomingCallScreen', {
+              callerName: callData.callerName,
+              channelId: callData.channelId,
+              callerImage: callData.callerImage || null,
+            });
+            return true;
+          } else {
+            console.error('Navigation reference is not available');
+          }
         }
         return false;
       } catch (error) {
@@ -166,7 +199,7 @@ class FCMService {
       console.log('Foreground notification received:', remoteMessage);
       
       // Thử xử lý như thông báo cuộc gọi trước
-      const isCallHandled = handleCallNotification(remoteMessage);
+      const isCallHandled = this.handleCallNotification(remoteMessage);
       
       // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
       if (!isCallHandled) {
@@ -179,7 +212,7 @@ class FCMService {
       console.log('Notification opened app from background:', remoteMessage);
       
       // Thử xử lý như thông báo cuộc gọi trước
-      const isCallHandled = handleCallNotification(remoteMessage);
+      const isCallHandled = this.handleCallNotification(remoteMessage);
       
       // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
       if (!isCallHandled) {
@@ -195,7 +228,7 @@ class FCMService {
           console.log('App opened from quit state by notification:', remoteMessage);
           
           // Thử xử lý như thông báo cuộc gọi trước
-          const isCallHandled = handleCallNotification(remoteMessage);
+          const isCallHandled = this.handleCallNotification(remoteMessage);
           
           // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
           if (!isCallHandled && remoteMessage) {

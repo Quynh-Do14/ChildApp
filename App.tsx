@@ -76,6 +76,7 @@ function App(): React.JSX.Element {
   // Sử dụng một state duy nhất để theo dõi thông báo hiện tại
   const [notification, setNotification] = useState<any>(null);
   const [pendingNotification, setPendingNotification] = useState<any>(null);
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   // Tham chiếu đến đối tượng NavigationContainer
   // const navigationRef = React.useRef(null);
@@ -145,18 +146,61 @@ function App(): React.JSX.Element {
     if (pendingNotification && navigationRef.current) {
       // Xử lý thông báo đang chờ sau khi navigation sẵn sàng
       const handlePendingNotification = async () => {
-        // Thử xử lý thông báo
-        const isCallHandled = fcmService.handleCallNotification(pendingNotification);
-        if (!isCallHandled) {
-          onNotificationReceived(pendingNotification);
+        try {
+          // Thử xử lý thông báo
+          const isCallHandled = fcmService.handleCallNotification(pendingNotification);
+          if (!isCallHandled && pendingNotification.notification) {
+            // Thay vì gọi onNotificationReceived, hiển thị thông báo luôn
+            setNotification({
+              title: pendingNotification.notification.title || 'Thông báo mới',
+              body: pendingNotification.notification.body || '',
+              data: pendingNotification.data,
+            });
+          }
+        } catch (error) {
+          console.error('Error handling pending notification:', error);
+        } finally {
+          setPendingNotification(null);
         }
-        setPendingNotification(null);
       };
       
       // Đợi một chút để đảm bảo navigation đã sẵn sàng
       setTimeout(handlePendingNotification, 500);
     }
-  }, [pendingNotification, navigationRef.current]);
+  }, [pendingNotification]);
+
+  useEffect(() => {
+    if (navigationRef.current && !isNavigationReady) {
+      setIsNavigationReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (pendingNotification && isNavigationReady) {
+      // Xử lý thông báo đang chờ sau khi navigation sẵn sàng
+      const handlePendingNotification = async () => {
+        try {
+          // Thử xử lý thông báo
+          const isCallHandled = fcmService.handleCallNotification(pendingNotification);
+          if (!isCallHandled && pendingNotification.notification) {
+            // Thay vì gọi onNotificationReceived, hiển thị thông báo luôn
+            setNotification({
+              title: pendingNotification.notification.title || 'Thông báo mới',
+              body: pendingNotification.notification.body || '',
+              data: pendingNotification.data,
+            });
+          }
+        } catch (error) {
+          console.error('Error handling pending notification:', error);
+        } finally {
+          setPendingNotification(null);
+        }
+      };
+      
+      // Đợi một chút để đảm bảo navigation đã sẵn sàng
+      setTimeout(handlePendingNotification, 500);
+    }
+  }, [pendingNotification, isNavigationReady]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
