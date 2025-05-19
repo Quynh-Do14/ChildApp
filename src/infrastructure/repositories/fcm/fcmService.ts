@@ -113,68 +113,33 @@ class FCMService {
   // Sửa phương thức handleCallNotification
   handleCallNotification = (remoteMessage: any) => {
     try {
-      console.log('FCM - FULL DATA:', JSON.stringify(remoteMessage, null, 2));
-
-      // Kiểm tra nhiều trường hợp của thông báo cuộc gọi
-      if (
-        // Trường hợp 1: Định dạng như trong code hiện tại
-        (remoteMessage.data?.type === 'call') ||
-        // Trường hợp 2: Định dạng thực tế bạn nhận được
-        (remoteMessage.notification?.title?.includes('Cuộc gọi') && remoteMessage.data?.type === 'NOTIFICATION_TYPE')
-      ) {
-        // Xác định callData từ nhiều định dạng có thể có
-        let callData: any = {};
-
-        // Trường hợp 1: Thông tin trong data.callData
-        if (remoteMessage.data?.callData) {
-          if (typeof remoteMessage.data.callData === 'string') {
-            try {
-              callData = JSON.parse(remoteMessage.data.callData);
-            } catch (e) {
-              console.error('Error parsing callData string:', e);
-            }
-          } else {
-            callData = remoteMessage.data.callData;
-          }
-        }
-        // Trường hợp 2: Thông tin trực tiếp trong data
-        else if (remoteMessage.data?.channelId) {
-          callData = {
-            callerName: remoteMessage.data.callerName || "Unknown",
-            channelId: remoteMessage.data.channelId,
-            callerImage: remoteMessage.data.callerImage
-          };
-        }
-        // Trường hợp 3: Định dạng thực tế - Phải trích xuất từ body và id
-        else if (remoteMessage.notification?.body && remoteMessage.data?.id) {
-          const callerName = remoteMessage.notification.body.replace("Cuộc gọi từ ", "").trim();
-          callData = {
-            callerName: callerName || "Unknown Caller",
-            channelId: remoteMessage.data.id, // Sử dụng id làm channelId
-            callerImage: null
-          };
-        }
-        
-        console.log('Extracted call data:', callData);
-        
-        if (callData.channelId || callData.callerName) {
-          console.log('Navigating to IncomingCallScreen with:', callData);
-          setTimeout(() => {
-            navigate('IncomingCallScreen', {
-              callerName: callData.callerName || "Unknown",
-              channelId: callData.channelId || remoteMessage.data.id, // Fallback to id
-              callerImage: callData.callerImage || null,
+        if (remoteMessage.data?.type === 'call') {
+            const channelId = remoteMessage.data.channelId;
+            const callerName = remoteMessage.data.callerName;
+            const callerId = remoteMessage.data.callerId;
+            
+            console.log('Received call notification:', {
+                channelId,
+                callerName,
+                callerId
             });
-          }, 300);
-          return true;
+            
+            setTimeout(() => {
+                navigate('IncomingCallScreen', {
+                    channelId,
+                    callerName,
+                    callerId
+                });
+            }, 300);
+            
+            return true;
         }
-      }
-      return false;
+        return false;
     } catch (error) {
-      console.error('Error in handleCallNotification:', error);
-      return false;
+        console.error('Error handling call notification:', error);
+        return false;
     }
-  };
+};
 
   // Cập nhật phương thức navigateToCallScreen
   navigateToCallScreen = (callData: any, retries = 5) => {

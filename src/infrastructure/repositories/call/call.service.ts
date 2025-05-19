@@ -39,10 +39,20 @@ class CallService {
         }
     }
 
-    async joinChannel(channelId: string, uid: number = 0) {
+    async joinChannel(channelId: string, uid: number = 0, providedToken?: string) {
         try {
             console.log(`Attempting to join channel: ${channelId}`);
-
+            
+            // Sử dụng token được cung cấp nếu có
+            if (providedToken) {
+              console.log('Using provided token');
+              await this.requestPermissions();
+              await this.initEngine();
+              await this.engine.joinChannel(providedToken, channelId, null, uid);
+              return true;
+            }
+            
+            // Nếu không có token, lấy từ API
             const userToken = await AsyncStorage.getItem('token');
             if (!userToken) {
                 console.error('User not authenticated');
@@ -114,66 +124,53 @@ class CallService {
     async startCall(recipientId: string) {
         try {
             const userToken = await AsyncStorage.getItem('token');
-
             if (!userToken) {
                 throw new Error('User not authenticated');
             }
 
-            // Yêu cầu backend tạo kênh và gửi thông báo
+            // Gọi API initiate đã cải tiến
             const response = await fetch(Endpoint.Call.InitiateCall, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`,
+                    'Authorization': `Bearer ${userToken}`
                 },
                 body: JSON.stringify({
-                    recipientId: recipientId,
-                }),
+                    recipientId: recipientId
+                })
             });
 
-            const responseData = await response.json();
-            console.log('InitiateCall response:', responseData);
-
-            // Xác định channelId từ nhiều định dạng có thể có
-            let channelId;
-            if (responseData.channelName) {
-                channelId = responseData.channelName;
-            } else if (responseData.message) {
-                // Sử dụng message field nếu không có channelName
-                channelId = responseData.message;
-            } else {
-                throw new Error('Unable to extract channel ID from response');
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API error:', response.status, errorText);
+                throw new Error(`Failed to initiate call: ${response.status}`);
             }
 
-            console.log('Using Channel ID:', channelId);
+            const data = await response.json();
+            console.log('Initiate call response:', data);
 
-            // Tiếp tục với việc tham gia kênh
-            const joinResult = await this.joinChannel(channelId);
+            // Lấy thông tin từ response
+            const channelId = data.channelName;
+            const token = data.token;
 
-            console.log('Join result:', joinResult);
+            // Yêu cầu quyền và khởi tạo engine
+            await this.requestPermissions();
+            await this.initEngine();
 
-            // Thêm timeout cho cuộc gọi đi
-            const callTimeout = setTimeout(async () => {
-                // Nếu vẫn đang gọi (chưa được kết nối)
+            // Tham gia kênh trực tiếp với token đã cung cấp
+            console.log(`Joining channel with provided token: ${token.substring(0, 20)}...`);
+            await this.engine.joinChannel(token, channelId, null, 0);
+            console.log('Successfully joined Agora channel as caller');
+
+            // Thiết lập timeout cho cuộc gọi (30 giây)
+            this.callTimeout = setTimeout(async () => {
                 if (this.engine && !this.isCallConnected) {
-                    await this.endCall();
-                    // Gọi API để cập nhật trạng thái cuộc gọi là "MISSED"
-                    await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}&status=MISSED`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${userToken}`
-                        }
-                    });
-
-                    // Thông báo cho người dùng
+                    await this.endCall(channelId);
                     Alert.alert('Không có phản hồi', 'Người dùng không trả lời cuộc gọi');
                 }
-            }, 30000); // 30 giây
+            }, 30000);
 
-            // Lưu timeout ID để có thể hủy nếu người dùng nhận cuộc gọi
-            this.callTimeout = callTimeout;
-
-            return joinResult;
+            return true;
         } catch (error) {
             console.error('Error starting call:', error);
             return false;
@@ -212,6 +209,50 @@ class CallService {
             return true;
         } catch (error) {
             console.error('Error ending call:', error);
+            return false;
+        }
+    }
+
+    async joinCall(channelId: string) {
+        try {
+            const userToken = await AsyncStorage.getItem('token');
+            if (!userToken) {
+                throw new Error('User not authenticated');
+            }
+
+            // Gọi API join mới
+            console.log(`Getting token to join call with channel: ${channelId}`);
+            const response = await fetch(`${Endpoint.Call.Join}?channelName=${channelId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${userToken}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API error:', response.status, errorText);
+                throw new Error(`Failed to join call: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Join call response:', data);
+
+            // Lấy token từ response
+            const token = data.token;
+
+            // Yêu cầu quyền và khởi tạo engine
+            await this.requestPermissions();
+            await this.initEngine();
+
+            // Tham gia kênh
+            console.log(`Joining channel with token: ${token.substring(0, 20)}...`);
+            await this.engine.joinChannel(token, channelId, null, 0);
+            console.log('Successfully joined Agora channel as receiver');
+
+            return true;
+        } catch (error) {
+            console.error('Error joining call:', error);
             return false;
         }
     }

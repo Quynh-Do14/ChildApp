@@ -47,5 +47,6 @@ export class Endpoint {
         static History = "/call/history"
         static InitiateCall = "/call/initiate"
         static EndCall = "/call/end"
+        static Join = "/call/join"
     }
 }
