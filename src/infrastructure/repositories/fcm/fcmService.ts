@@ -2,7 +2,7 @@ import messaging from '@react-native-firebase/messaging';
 import { Platform, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Endpoint } from '../../../core/common/apiLink';
-import { navigationRef } from '../../../core/common/navigator';
+import { navigate } from '../../../core/common/navigator';
 
 class FCMService {
   async requestUserPermission() {
@@ -110,9 +110,10 @@ class FCMService {
     }
   }
 
+  // Sửa phương thức handleCallNotification
   handleCallNotification = (remoteMessage: any) => {
     try {
-      console.log('Checking notification type:', remoteMessage?.data?.type);
+      console.log('FCM - Checking notification type:', remoteMessage?.data?.type);
 
       if (remoteMessage.data && remoteMessage.data.type === 'call') {
         // Xử lý dữ liệu cuộc gọi
@@ -121,86 +122,76 @@ class FCMService {
             ? JSON.parse(remoteMessage.data.callData)
             : remoteMessage.data.callData;
 
-        console.log('Processing call notification with data:', callData);
+        console.log('FCM - Processing call notification with data:', callData);
 
-        // Điều hướng đến màn hình cuộc gọi đến
-        if (navigationRef && navigationRef.current) {
-          navigationRef.current.navigate('IncomingCallScreen', {
-            callerName: callData.callerName,
-            channelId: callData.channelId,
-            callerImage: callData.callerImage || null,
-          });
-          return true;
-        } else {
-          console.error('Navigation reference is not available');
-        }
+        // SỬ DỤNG navigate() thay vì navigationRef.current.navigate()
+        navigate('IncomingCallScreen', {
+          callerName: callData.callerName,
+          channelId: callData.channelId,
+          callerImage: callData.callerImage || null,
+        });
+        
+        return true;
       }
       return false;
     } catch (error) {
-      console.error('Error processing call notification:', error);
+      console.error('FCM - Error processing call notification:', error);
       return false;
     }
   };
 
-  // Cần thêm logic retry trong handleCallNotification
+  // Cập nhật phương thức navigateToCallScreen
   navigateToCallScreen = (callData: any, retries = 5) => {
-    if (navigationRef.current) {
-      navigationRef.current.navigate('IncomingCallScreen', {
-        callerName: callData.callerName,
-        channelId: callData.channelId,
-        callerImage: callData.callerImage || null,
-      });
-      return true;
-    } else {
-      console.log(`Navigation ref not ready, retries left: ${retries}`);
-      if (retries > 0) {
-        setTimeout(() => this.navigateToCallScreen(callData, retries - 1), 300);
-      }
-      return false;
-    }
+    // Sử dụng navigate() thay vì navigationRef.current.navigate()
+    navigate('IncomingCallScreen', {
+      callerName: callData.callerName,
+      channelId: callData.channelId,
+      callerImage: callData.callerImage || null,
+    });
+    return true;
   };
 
   setupMessageListeners(onNotificationReceived: any) {
     // Hàm xử lý thông báo cuộc gọi chung
-    this.handleCallNotification = (remoteMessage: any) => {
-      try {
-        console.log('Checking notification type:', remoteMessage?.data?.type);
-        
-        if (remoteMessage.data && remoteMessage.data.type === 'call') {
-          // Xử lý dữ liệu cuộc gọi
-          const callData =
-            typeof remoteMessage.data.callData === 'string'
-              ? JSON.parse(remoteMessage.data.callData)
-              : remoteMessage.data.callData;
+    // this.handleCallNotification = (remoteMessage: any) => {
+    //   try {
+    //     console.log('Checking notification type:', remoteMessage?.data?.type);
 
-          console.log('Processing call notification with data:', callData);
+    //     if (remoteMessage.data && remoteMessage.data.type === 'call') {
+    //       // Xử lý dữ liệu cuộc gọi
+    //       const callData =
+    //         typeof remoteMessage.data.callData === 'string'
+    //           ? JSON.parse(remoteMessage.data.callData)
+    //           : remoteMessage.data.callData;
 
-          // Điều hướng đến màn hình cuộc gọi đến
-          if (navigationRef && navigationRef.current) {
-            navigationRef.current.navigate('IncomingCallScreen', {
-              callerName: callData.callerName,
-              channelId: callData.channelId,
-              callerImage: callData.callerImage || null,
-            });
-            return true;
-          } else {
-            console.error('Navigation reference is not available');
-          }
-        }
-        return false;
-      } catch (error) {
-        console.error('Error processing call notification:', error);
-        return false;
-      }
-    };
+    //       console.log('Processing call notification with data:', callData);
+
+    //       // Điều hướng đến màn hình cuộc gọi đến
+    //       if (navigationRef && navigationRef.current) {
+    //         navigationRef.current.navigate('IncomingCallScreen', {
+    //           callerName: callData.callerName,
+    //           channelId: callData.channelId,
+    //           callerImage: callData.callerImage || null,
+    //         });
+    //         return true;
+    //       } else {
+    //         console.error('Navigation reference is not available');
+    //       }
+    //     }
+    //     return false;
+    //   } catch (error) {
+    //     console.error('Error processing call notification:', error);
+    //     return false;
+    //   }
+    // };
 
     // Xử lý thông báo khi ứng dụng đang chạy ở foreground
     const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
       console.log('Foreground notification received:', remoteMessage);
-      
+
       // Thử xử lý như thông báo cuộc gọi trước
       const isCallHandled = this.handleCallNotification(remoteMessage);
-      
+
       // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
       if (!isCallHandled) {
         onNotificationReceived(remoteMessage);
@@ -210,14 +201,15 @@ class FCMService {
     // Xử lý khi user nhấn vào thông báo và mở ứng dụng từ background
     const unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
       console.log('Notification opened app from background:', remoteMessage);
-      
+
       // Thử xử lý như thông báo cuộc gọi trước
-      const isCallHandled = this.handleCallNotification(remoteMessage);
-      
-      // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
-      if (!isCallHandled) {
-        onNotificationReceived(remoteMessage);
-      }
+      setTimeout(() => {
+        const isCallHandled = this.handleCallNotification(remoteMessage);
+
+        if (!isCallHandled) {
+          onNotificationReceived(remoteMessage);
+        }
+      }, 500);
     });
 
     // Xử lý khi ứng dụng được mở từ trạng thái đóng hoàn toàn

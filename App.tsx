@@ -142,48 +142,43 @@ function App(): React.JSX.Element {
     initFCM();
   }, []);
 
-  useEffect(() => {
-    if (pendingNotification && navigationRef.current) {
-      // Xử lý thông báo đang chờ sau khi navigation sẵn sàng
-      const handlePendingNotification = async () => {
-        try {
-          // Thử xử lý thông báo
-          const isCallHandled = fcmService.handleCallNotification(pendingNotification);
-          if (!isCallHandled && pendingNotification.notification) {
-            // Thay vì gọi onNotificationReceived, hiển thị thông báo luôn
-            setNotification({
-              title: pendingNotification.notification.title || 'Thông báo mới',
-              body: pendingNotification.notification.body || '',
-              data: pendingNotification.data,
-            });
-          }
-        } catch (error) {
-          console.error('Error handling pending notification:', error);
-        } finally {
-          setPendingNotification(null);
-        }
-      };
-      
-      // Đợi một chút để đảm bảo navigation đã sẵn sàng
-      setTimeout(handlePendingNotification, 500);
-    }
-  }, [pendingNotification]);
-
+  // Kiểm tra navigation ref
   useEffect(() => {
     if (navigationRef.current && !isNavigationReady) {
       setIsNavigationReady(true);
+      console.log('Navigation ref is ready, setting isNavigationReady to true');
     }
-  }, []);
+  }, [isNavigationReady]); // Thêm isNavigationReady vào dependencies
 
+  // Xử lý thông báo đang chờ
   useEffect(() => {
-    if (pendingNotification && isNavigationReady) {
-      // Xử lý thông báo đang chờ sau khi navigation sẵn sàng
-      const handlePendingNotification = async () => {
+    if (!pendingNotification) return;
+    
+    console.log('Processing pending notification, navigation ready:', isNavigationReady);
+    
+    // Nếu navigation chưa sẵn sàng nhưng có pendingNotification, đợi 300ms rồi kiểm tra lại
+    if (!isNavigationReady && navigationRef.current) {
+      console.log('Setting navigation ready due to pending notification');
+      setIsNavigationReady(true);
+    }
+    
+    // Chỉ xử lý thông báo khi navigation đã sẵn sàng
+    if (isNavigationReady) {
+      console.log('Navigation is ready, processing notification after delay');
+      const timer = setTimeout(() => {
         try {
+          // Debugging
+          console.log('Handling notification:', 
+            pendingNotification.data?.type,
+            JSON.stringify(pendingNotification.data)
+          );
+          
           // Thử xử lý thông báo
           const isCallHandled = fcmService.handleCallNotification(pendingNotification);
+          console.log('Call handled result:', isCallHandled);
+          
           if (!isCallHandled && pendingNotification.notification) {
-            // Thay vì gọi onNotificationReceived, hiển thị thông báo luôn
+            // Hiển thị thông báo trong app
             setNotification({
               title: pendingNotification.notification.title || 'Thông báo mới',
               body: pendingNotification.notification.body || '',
@@ -195,21 +190,22 @@ function App(): React.JSX.Element {
         } finally {
           setPendingNotification(null);
         }
-      };
+      }, 1000); // Thời gian chờ hợp lý
       
-      // Đợi một chút để đảm bảo navigation đã sẵn sàng
-      setTimeout(handlePendingNotification, 500);
+      return () => clearTimeout(timer);
     }
-  }, [pendingNotification, isNavigationReady]);
+  }, [pendingNotification, isNavigationReady]); // Thêm cả hai dependencies
 
+  // Phần return trong App.tsx
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <RecoilRoot>
         <NavigationContainer 
           ref={navigationRef}
           onReady={() => {
-            setNavigationReady();
-            console.log('Navigation is ready');
+            console.log('Navigation container is now ready!');
+            setNavigationReady(); // Gọi hàm từ navigator.ts
+            setIsNavigationReady(true); // Cập nhật state trong App.tsx
           }}
         >
           <StackNavigator />
@@ -218,11 +214,17 @@ function App(): React.JSX.Element {
               title={notification.title}
               message={notification.body}
               onPress={() => {
-                // Xử lý khi nhấn vào thông báo
-                if (notification.data && notification.data.screen && navigationRef.current) {
-                  // @ts-ignore
+                console.log('Notification pressed:', notification.data);
+                // Kiểm tra xem đây có phải thông báo cuộc gọi không
+                if (notification.data?.type === 'call') {
+                  fcmService.handleCallNotification({data: notification.data});
+                } 
+                // Xử lý điều hướng thông thường
+                else if (notification.data?.screen && navigationRef.current) {
                   navigationRef.current.navigate(notification.data.screen, notification.data.params);
                 }
+                // Đóng notification sau khi xử lý
+                setNotification(null);
               }}
               onClose={() => setNotification(null)}
             />
