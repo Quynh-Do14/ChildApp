@@ -115,35 +115,58 @@ class FCMService {
     try {
       console.log('FCM - FULL DATA:', JSON.stringify(remoteMessage, null, 2));
       
-      // Check multiple data structures
-      if (remoteMessage.data?.type === 'call') {
-        let callData: any;
-        try {
+      // Kiểm tra nhiều trường hợp của thông báo cuộc gọi
+      if (
+        // Trường hợp 1: Định dạng như trong code hiện tại
+        (remoteMessage.data?.type === 'call') ||
+        // Trường hợp 2: Định dạng thực tế bạn nhận được
+        (remoteMessage.notification?.title?.includes('Cuộc gọi') && remoteMessage.data?.type === 'NOTIFICATION_TYPE')
+      ) {
+        // Xác định callData từ nhiều định dạng có thể có
+        let callData: any = {};
+        
+        // Trường hợp 1: Thông tin trong data.callData
+        if (remoteMessage.data?.callData) {
           if (typeof remoteMessage.data.callData === 'string') {
-            callData = JSON.parse(remoteMessage.data.callData);
-          } else if (remoteMessage.data.callData) {
+            try {
+              callData = JSON.parse(remoteMessage.data.callData);
+            } catch (e) {
+              console.error('Error parsing callData string:', e);
+            }
+          } else {
             callData = remoteMessage.data.callData;
-          } else if (remoteMessage.data.channelId) {
-            callData = {
-              callerName: remoteMessage.data.callerName || "Unknown",
-              channelId: remoteMessage.data.channelId,
-              callerImage: remoteMessage.data.callerImage
-            };
           }
-          
-          if (callData && callData.channelId) {
-            console.log('Navigating to IncomingCallScreen with:', callData);
-            setTimeout(() => {
-              navigate('IncomingCallScreen', {
-                callerName: callData.callerName || "Unknown",
-                channelId: callData.channelId,
-                callerImage: callData.callerImage || null,
-              });
-            }, 300); // Thêm delay
-            return true;
-          }
-        } catch (e) {
-          console.error('Error processing callData:', e);
+        }
+        // Trường hợp 2: Thông tin trực tiếp trong data
+        else if (remoteMessage.data?.channelId) {
+          callData = {
+            callerName: remoteMessage.data.callerName || "Unknown",
+            channelId: remoteMessage.data.channelId,
+            callerImage: remoteMessage.data.callerImage
+          };
+        }
+        // Trường hợp 3: Định dạng thực tế - Phải trích xuất từ body và id
+        else if (remoteMessage.notification?.body && remoteMessage.data?.id) {
+          const callerName = remoteMessage.notification.body.replace("Cuộc gọi từ ", "").trim();
+          callData = {
+            callerName: callerName || "Unknown Caller",
+            channelId: remoteMessage.data.id, // Sử dụng id làm channelId
+            callerImage: null
+          };
+        }
+        
+        console.log('Extracted call data:', callData);
+        
+        if (callData.channelId || callData.callerName) {
+          console.log('Navigating to IncomingCallScreen with:', callData);
+          setTimeout(() => {
+            navigate('IncomingCallScreen', {
+              callerName: callData.callerName || "Unknown",
+              channelId: callData.channelId || remoteMessage.data.id, // Fallback to id
+              callerImage: callData.callerImage || null,
+            });
+          }, 300);
+          return true;
         }
       }
       return false;

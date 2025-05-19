@@ -237,50 +237,32 @@ function App(): React.JSX.Element {
               title={notification.title}
               message={notification.body}
               onPress={() => {
-                console.log('Notification pressed:', JSON.stringify(notification.data));
+                console.log('Notification pressed:', JSON.stringify(notification));
                 try {
-                  if (notification.data?.type === 'call') {
-                    // Xử lý nhiều định dạng dữ liệu có thể có
-                    let callData;
-
-                    if (notification.data.callData) {
-                      // Trường hợp 1: callData là string JSON
-                      if (typeof notification.data.callData === 'string') {
-                        try {
-                          callData = JSON.parse(notification.data.callData);
-                        } catch (e) {
-                          console.error('Error parsing callData string:', e);
-                          callData = { channelId: notification.data.callData };
-                        }
-                      }
-                      // Trường hợp 2: callData là object
-                      else {
-                        callData = notification.data.callData;
-                      }
-                    } 
-                    // Trường hợp 3: callData là các trường riêng biệt
-                    else if (notification.data.channelId) {
-                      callData = {
-                        callerName: notification.data.callerName || "Unknown",
-                        channelId: notification.data.channelId,
-                        callerImage: notification.data.callerImage
-                      };
-                    }
+                  // Kiểm tra nếu là thông báo cuộc gọi từ tiêu đề
+                  const isCallNotification = 
+                    notification.title?.includes('Cuộc gọi') || 
+                    notification.data?.type === 'call';
+                  
+                  if (isCallNotification) {
+                    // Trích xuất thông tin người gọi từ body
+                    const callerName = notification.body.replace("Cuộc gọi từ ", "").trim();
                     
-                    console.log('Processed call data:', callData);
-                    if (callData && callData.channelId) {
-                      console.log('Attempting navigation to IncomingCallScreen with:', callData);
-                      
-                      // Thêm timeout để đảm bảo UI đã sẵn sàng
+                    // Sử dụng notification.data.id làm channelId
+                    const channelId = notification.data.id;
+                    
+                    console.log(`Detected call notification with: callerName=${callerName}, channelId=${channelId}`);
+                    
+                    if (channelId) {
                       setTimeout(() => {
                         navigate('IncomingCallScreen', {
-                          callerName: callData.callerName || "Unknown",
-                          channelId: callData.channelId,
-                          callerImage: callData.callerImage || null,
+                          callerName: callerName || "Unknown",
+                          channelId: channelId,
+                          callerImage: null,
                         });
                       }, 100);
                     } else {
-                      console.error('Invalid call data structure:', notification.data);
+                      console.error('Missing channelId in notification data');
                     }
                   } else if (notification.data?.screen) {
                     navigate(notification.data.screen, notification.data.params);

@@ -88,21 +88,30 @@ class CallService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`
+                    'Authorization': `Bearer ${userToken}`,
                 },
                 body: JSON.stringify({
                     recipientId: recipientId,
                 }),
             });
-
-            // Sửa đổi: Lấy channelName từ response thay vì channelId
-            const { channelName } = await response.json();
-
-            // Sử dụng channelName như là channelId
-            const channelId = channelName;
-            console.log('Channel ID:', channelId);
-
-            // Tiếp tục với channelId
+            
+            const responseData = await response.json();
+            console.log('InitiateCall response:', responseData);
+            
+            // Xác định channelId từ nhiều định dạng có thể có
+            let channelId;
+            if (responseData.channelName) {
+              channelId = responseData.channelName;
+            } else if (responseData.message) {
+              // Sử dụng message field nếu không có channelName
+              channelId = responseData.message;
+            } else {
+              throw new Error('Unable to extract channel ID from response');
+            }
+            
+            console.log('Using Channel ID:', channelId);
+            
+            // Tiếp tục với việc tham gia kênh
             const joinResult = await this.joinChannel(channelId);
 
             console.log('Join result:', joinResult);
