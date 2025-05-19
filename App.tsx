@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from 'react';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {NavigationContainer, useNavigation} from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import Constants from './src/core/common/constants';
-import {RecoilRoot} from 'recoil';
+import { RecoilRoot } from 'recoil';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './src/page/Auth';
 import DrawerMenu from './src/infrastructure/common/layouts/drawer-menu';
@@ -10,7 +10,7 @@ import EditProfile from './src/page/profile/components/editProfile';
 import ForgotPasswordScreen from './src/page/Auth/forgotPassword';
 import ResetPasswordScreen from './src/page/Auth/resetPassword';
 import ChatSlugScreen from './src/page/chat/chatSlug';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RegisterScreen from './src/page/Auth/register';
 import OtpVerificationScreen from './src/page/Auth/veriify-otp';
 import fcmService from './src/infrastructure/repositories/fcm/fcmService';
@@ -54,11 +54,11 @@ const StackNavigator = () => {
     // <NavigationContainer ref={navigationRef}>
     <Stack.Navigator
       initialRouteName={'LoginScreen'}
-      screenOptions={{headerShown: false}}>
+      screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name={'DrawerMenu'}
         component={DrawerMenu}
-        options={{headerShown: false}}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name={Constants.Navigator.Auth.LoginScreen.value}
@@ -82,16 +82,16 @@ const StackNavigator = () => {
       <Stack.Screen
         name="CallScreen"
         component={CallScreen}
-        options={{headerShown: false}}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="IncomingCallScreen"
         component={IncomingCallScreen}
-        options={{headerShown: false}}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="CallHistoryScreen"
-        options={{headerShown: true, title: 'Lịch sử cuộc gọi'}}
+        options={{ headerShown: true, title: 'Lịch sử cuộc gọi' }}
         component={CallHistoryScreen}
       />
     </Stack.Navigator>
@@ -269,10 +269,10 @@ function App(): React.JSX.Element {
 
   // Phần return trong App.tsx
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <RecoilRoot>
         <NavigationContainer
-          ref={navigationRef}
+          // ref={navigationRef}
           onReady={() => {
             console.log('Navigation container is now ready!');
             setNavigationReady(); // Gọi hàm từ navigator.ts
