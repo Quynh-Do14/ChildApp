@@ -73,7 +73,7 @@ let pendingNavigationCalls: Array<{ name: string; params?: object }> = [];
 
 export function setNavigationReady() {
   isNavigationReady = true;
-  
+
   // Xử lý các lệnh điều hướng đang chờ
   if (pendingNavigationCalls.length > 0) {
     console.log(`Processing ${pendingNavigationCalls.length} pending navigation calls`);

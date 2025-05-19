@@ -95,10 +95,17 @@ class CallService {
                 }),
             });
 
-            const { channelId } = await response.json();
+            // Sửa đổi: Lấy channelName từ response thay vì channelId
+            const { channelName } = await response.json();
 
-            // Tham gia kênh
+            // Sử dụng channelName như là channelId
+            const channelId = channelName;
+            console.log('Channel ID:', channelId);
+
+            // Tiếp tục với channelId
             const joinResult = await this.joinChannel(channelId);
+
+            console.log('Join result:', joinResult);
 
             // Thêm timeout cho cuộc gọi đi
             const callTimeout = setTimeout(async () => {
@@ -112,12 +119,12 @@ class CallService {
                             'Authorization': `Bearer ${userToken}`
                         }
                     });
-                    
+
                     // Thông báo cho người dùng
                     Alert.alert('Không có phản hồi', 'Người dùng không trả lời cuộc gọi');
                 }
             }, 30000); // 30 giây
-            
+
             // Lưu timeout ID để có thể hủy nếu người dùng nhận cuộc gọi
             this.callTimeout = callTimeout;
 

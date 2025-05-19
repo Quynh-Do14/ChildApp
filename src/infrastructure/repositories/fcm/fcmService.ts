@@ -231,10 +231,10 @@ class FCMService {
       .then(remoteMessage => {
         if (remoteMessage) {
           console.log('App opened from quit state by notification:', remoteMessage);
-          
+
           // Thử xử lý như thông báo cuộc gọi trước
           const isCallHandled = this.handleCallNotification(remoteMessage);
-          
+
           // Nếu không phải thông báo cuộc gọi, xử lý như thông báo thông thường
           if (!isCallHandled && remoteMessage) {
             onNotificationReceived(remoteMessage);
