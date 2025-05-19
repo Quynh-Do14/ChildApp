@@ -47,7 +47,7 @@ const IncomingCallScreen = () => {
                 await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${userToken}`
+                        'Authorization': `Bearer ${userToken}`,
                     }
                 });
             }

@@ -114,7 +114,7 @@ class FCMService {
   handleCallNotification = (remoteMessage: any) => {
     try {
       console.log('FCM - FULL DATA:', JSON.stringify(remoteMessage, null, 2));
-      
+
       // Kiểm tra nhiều trường hợp của thông báo cuộc gọi
       if (
         // Trường hợp 1: Định dạng như trong code hiện tại
@@ -124,7 +124,7 @@ class FCMService {
       ) {
         // Xác định callData từ nhiều định dạng có thể có
         let callData: any = {};
-        
+
         // Trường hợp 1: Thông tin trong data.callData
         if (remoteMessage.data?.callData) {
           if (typeof remoteMessage.data.callData === 'string') {
