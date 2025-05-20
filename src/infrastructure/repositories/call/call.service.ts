@@ -121,7 +121,7 @@ class CallService {
         }
     }
 
-    async startCall(recipientId: string) {
+    async startCall(receiverId: string) {
         try {
             const userToken = await AsyncStorage.getItem('token');
             if (!userToken) {
@@ -133,11 +133,11 @@ class CallService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`
+                    'Authorization': `Bearer ${userToken}`,
                 },
                 body: JSON.stringify({
-                    recipientId: recipientId
-                })
+                    receiverId: receiverId,
+                }),
             });
 
             if (!response.ok) {
