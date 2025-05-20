@@ -174,7 +174,12 @@ class CallService {
                     
                     // Thêm event listener cho lỗi
                     this.engine.addListener('Error', (err: any) => {
-                        console.error('Agora SDK Error:', err);
+                        console.error(`Agora Error Code: ${err.code}, Message: ${err.message || 'Unknown error'}`);
+                        // Log các mã lỗi phổ biến
+                        if (err.code === 17) console.log('Error 17: User already joined channel');
+                        if (err.code === 2) console.log('Error 2: Invalid channel name');
+                        if (err.code === 5) console.log('Error 5: Refused by server');
+                        if (err.code === 1) console.log('Error 1: General error with no specific reason');
                     });
                 }
                 return true;
@@ -288,42 +293,73 @@ class CallService {
 
     async joinCall(channelId: string) {
         try {
+            // Kiểm tra kết nối mạng trước
+            const netInfo = await NetInfo.fetch();
+            if (!netInfo.isConnected) {
+                Alert.alert('Lỗi kết nối', 'Vui lòng kiểm tra kết nối internet');
+                return false;
+            }
+
             const userToken = await AsyncStorage.getItem('token');
             if (!userToken) {
                 throw new Error('User not authenticated');
             }
 
-            // Gọi API join mới
-            console.log(`Getting token to join call with channel: ${channelId}`);
-            const response = await fetch(`${Endpoint.Call.Join}?channelName=${channelId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${userToken}`
+            // Sử dụng AbortController với timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            try {
+                console.log(`Getting token to join call with channel: ${channelId}`);
+                const response = await fetch(`${Endpoint.Call.Join}?channelName=${channelId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    },
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId); // Xóa timeout nếu fetch thành công
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error:', response.status, errorText);
+                    throw new Error(`Failed to join call: ${response.status}`);
                 }
-            });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('API error:', response.status, errorText);
-                throw new Error(`Failed to join call: ${response.status}`);
+                const data = await response.json();
+                console.log('Join call response:', data);
+
+                // Lấy token từ response
+                const token = data.token;
+
+                // Yêu cầu quyền và khởi tạo engine
+                const permissionGranted = await this.requestPermissions();
+                if (!permissionGranted) {
+                    Alert.alert('Cần quyền truy cập', 'Ứng dụng cần quyền truy cập microphone');
+                    return false;
+                }
+
+                const engineInitialized = await this.initEngineWithRetry();
+                if (!engineInitialized) {
+                    Alert.alert('Lỗi khởi tạo', 'Không thể khởi tạo dịch vụ cuộc gọi');
+                    return false;
+                }
+
+                // Tham gia kênh với chuỗi rỗng thay vì null
+                console.log(`Joining channel with token: ${token.substring(0, 20)}...`);
+                await this.engine.joinChannel(token, channelId, '', 0);
+                console.log('Successfully joined Agora channel as receiver');
+
+                return true;
+            } catch (fetchError: any) {
+                clearTimeout(timeoutId);
+                
+                if (fetchError.name === 'AbortError') {
+                    Alert.alert('Timeout', 'Yêu cầu bị hủy do quá thời gian chờ');
+                }
+                throw fetchError;
             }
-
-            const data = await response.json();
-            console.log('Join call response:', data);
-
-            // Lấy token từ response
-            const token = data.token;
-
-            // Yêu cầu quyền và khởi tạo engine
-            await this.requestPermissions();
-            await this.initEngine();
-
-            // Tham gia kênh
-            console.log(`Joining channel with token: ${token.substring(0, 20)}...`);
-            await this.engine.joinChannel(token, channelId, null, 0);
-            console.log('Successfully joined Agora channel as receiver');
-
-            return true;
         } catch (error) {
             console.error('Error joining call:', error);
             return false;
