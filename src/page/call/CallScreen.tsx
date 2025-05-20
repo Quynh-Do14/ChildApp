@@ -190,6 +190,23 @@ const CallScreen = () => {
         }
     }, [callState, fadeAnim]);
 
+    // Xử lý mất kết nối
+    useEffect(() => {
+        const handleConnectionLost = () => {
+            Alert.alert(
+              'Mất kết nối',
+              'Kết nối cuộc gọi bị mất. Vui lòng kiểm tra mạng hoặc thử lại sau.',
+              [{ text: 'Đóng', onPress: () => navigation.goBack() }]
+            );
+        };
+        
+        callService.engine?.addListener('ConnectionLost', handleConnectionLost);
+        
+        return () => {
+            callService.engine?.removeListener('ConnectionLost');
+        };
+    }, [navigation]);
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>

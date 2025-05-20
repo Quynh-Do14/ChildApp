@@ -1,4 +1,4 @@
-import RtcEngine from 'react-native-agora';
+import RtcEngine, { createAgoraRtcEngine } from 'react-native-agora';
 import { Platform, PermissionsAndroid, Alert, AppState } from 'react-native';
 import { requestMultiple, PERMISSIONS } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,7 +21,7 @@ class CallService {
                 const granted = await PermissionsAndroid.requestMultiple([
                     PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
                 ]);
-                
+
                 return granted['android.permission.RECORD_AUDIO'] === 'granted';
             } else {
                 const result = await requestMultiple([PERMISSIONS.IOS.MICROPHONE]);
@@ -34,13 +34,19 @@ class CallService {
     }
 
     async initEngine() {
-        if (!this.engine) {
-            this.engine = await RtcEngine();
-            await this.engine.initialize({
-                appId: this.appId,
-            });
-            // Bật âm thanh
-            await this.engine.enableAudio();
+        try {
+            if (!this.engine) {
+                this.engine = createAgoraRtcEngine();
+                await this.engine.initialize({ appId: this.appId });
+                await this.engine.enableAudio();
+
+                // Thêm các sự kiện lắng nghe lỗi
+                // this.engine.addListener('Error', this.handleAgoraError);
+            }
+            return true;
+        } catch (error) {
+            console.error('Không thể khởi tạo Agora engine:', error);
+            return false;
         }
     }
 
@@ -72,7 +78,7 @@ class CallService {
 
                 // 3. Sử dụng Promise với timeout để tránh chờ vô hạn
                 const joinResult = await Promise.race([
-                    this.engine.joinChannel(providedToken, channelId, null, uid),
+                    this.engine.joinChannel(providedToken, channelId, '', uid),
                     new Promise((_, reject) =>
                         setTimeout(() => reject(new Error('Timeout joining channel')), 10000)
                     )
@@ -103,8 +109,6 @@ class CallService {
                         'Authorization': `Bearer ${userToken}`,
                         'Content-Type': 'application/json'
                     },
-                    // Sử dụng timeout dài hơn (20s)
-                    signal: new AbortController().signal,
                 });
 
                 if (!response.ok) {
@@ -171,7 +175,7 @@ class CallService {
                         appId: this.appId,
                     });
                     await this.engine.enableAudio();
-                    
+
                     // Thêm event listener cho lỗi
                     this.engine.addListener('Error', (err: any) => {
                         console.error(`Agora Error Code: ${err.code}, Message: ${err.message || 'Unknown error'}`);
@@ -184,7 +188,7 @@ class CallService {
                 }
                 return true;
             } catch (error) {
-                console.error(`Engine init attempt ${i+1} failed:`, error);
+                console.error(`Engine init attempt ${i + 1} failed:`, error);
                 if (i === retries) return false;
                 // Đợi 1s trước khi thử lại
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -237,7 +241,7 @@ class CallService {
 
             // Tham gia kênh trực tiếp với token đã cung cấp
             console.log(`Joining channel with provided token: ${token.substring(0, 20)}...`);
-            await this.engine.joinChannel(token, channelId, null, 0);
+            await this.engine.joinChannel(token, channelId, '', 0);
             console.log('Successfully joined Agora channel as caller');
 
             // Thiết lập timeout cho cuộc gọi (30 giây)
@@ -314,7 +318,8 @@ class CallService {
                 const response = await fetch(`${Endpoint.Call.Join}?channelName=${channelId}`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${userToken}`
+                        'Authorization': `Bearer ${userToken}`,
+                        'Content-Type': 'application/json'
                     },
                     signal: controller.signal
                 });
@@ -354,7 +359,7 @@ class CallService {
                 return true;
             } catch (fetchError: any) {
                 clearTimeout(timeoutId);
-                
+
                 if (fetchError.name === 'AbortError') {
                     Alert.alert('Timeout', 'Yêu cầu bị hủy do quá thời gian chờ');
                 }
@@ -367,13 +372,26 @@ class CallService {
     }
 
     setupCallEvents(onUserJoined: any, onUserOffline: any) {
+        // Các sự kiện hiện tại
         this.engine.addListener('UserJoined', onUserJoined);
         this.engine.addListener('UserOffline', onUserOffline);
 
-        // Trả về hàm cleanup
+        // Thêm các sự kiện quan trọng từ Agora-RN-Quickstart
+        this.engine.addListener('JoinChannelSuccess', (connection: any, elapsed: any) => {
+            console.log('Tham gia kênh thành công:', connection.channelId);
+            // Đánh dấu là đã kết nối thành công
+            this.setCallConnected();
+        });
+
+        this.engine.addListener('ConnectionStateChanged', (state: any, reason: any) => {
+            console.log('Trạng thái kết nối thay đổi:', state, 'lý do:', reason);
+        });
+
         return () => {
             this.engine.removeListener('UserJoined');
             this.engine.removeListener('UserOffline');
+            this.engine.removeListener('JoinChannelSuccess');
+            this.engine.removeListener('ConnectionStateChanged');
         };
     }
 
