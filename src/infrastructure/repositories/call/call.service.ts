@@ -48,44 +48,68 @@ class CallService {
         try {
             // Lấy token xác thực
             const userToken = await AsyncStorage.getItem('token');
+            console.log('User token:', userToken ? 'Có token' : 'Không có token');
             if (!userToken) return { success: false, error: 'Lỗi xác thực' };
 
-            // Gọi API để khởi tạo cuộc gọi
-            const response = await fetch(Endpoint.Call.InitiateCall, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`,
-                },
-                body: JSON.stringify({ receiverId }),
-            });
+            try {
+                console.log('Khởi tạo cuộc gọi với receiverId:', receiverId);
+                
+                // In ra endpoint đầy đủ để debug
+                console.log('URL:', Endpoint.Call.InitiateCall);
 
-            if (!response.ok) {
-                throw new Error(`Failed to initiate call: ${response.status}`);
+                const response = await fetch(Endpoint.Call.InitiateCall, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`,
+                    },
+                    body: JSON.stringify({ receiverId }),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error:', response.status, errorText);
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                console.log('API phản hồi thành công');
+                const data = await response.json();
+                console.log('Data từ API:', JSON.stringify(data));
+                
+                const { channelName, token } = data;
+
+                // Khởi tạo engine nếu chưa
+                if (!this.engine) {
+                    console.log('Khởi tạo Agora engine...');
+                    await this.init();
+                }
+
+                // Tham gia kênh - giống chính xác như Agora-RN-Quickstart
+                console.log('Tham gia kênh với token: ', token ? token.substr(0, 20) + '...' : 'undefined');
+                await this.engine?.joinChannel(token, channelName, 0, {});
+                console.log('Tham gia kênh thành công với vai trò người gọi');
+
+                return {
+                    success: true,
+                    channelName,
+                    token
+                };
+            } catch (apiError) {
+                console.error('API error detail:', apiError);
+                throw apiError;
             }
-
-            const data = await response.json();
-            const { channelName, token } = data;
-
-            // Khởi tạo engine nếu chưa
-            if (!this.engine) {
-                await this.init();
-            }
-
-            // Tham gia kênh - giống như Agora-RN-Quickstart
-            await this.engine?.joinChannel(token, channelName, 0, {});
-            console.log('Successfully joined channel as caller');
-
-            return {
-                success: true,
-                channelName,
-                token
-            };
         } catch (error: any) {
             console.error('Error starting call:', error);
+            
+            // Cải thiện thông báo lỗi
+            let errorMessage = 'Không thể bắt đầu cuộc gọi';
+            if (error.message?.includes('Network request failed')) {
+                errorMessage = 'Không thể kết nối tới server. Kiểm tra kết nối mạng của bạn.';
+            }
+            
             return {
                 success: false,
-                error: error.message || 'Không thể bắt đầu cuộc gọi'
+                error: errorMessage
             };
         }
     }
@@ -94,42 +118,77 @@ class CallService {
         try {
             // Lấy token xác thực
             const userToken = await AsyncStorage.getItem('token');
+            console.log('User token:', userToken ? 'Có token' : 'Không có token');
             if (!userToken) return { success: false, error: 'Lỗi xác thực' };
 
-            // Lấy Agora token từ API
-            const response = await fetch(`${Endpoint.Call.Join}?channelName=${channelName}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${userToken}`,
+            // Lấy Agora token trực tiếp từ API get-token thay vì join
+            // (Tạm thời để debug)
+            try {
+                console.log('Đang lấy token từ API...');
+                console.log('Channel name:', channelName);
+                
+                // In ra endpoint đầy đủ để debug
+                console.log('URL:', `${Endpoint.Call.GetToken}?channelName=${channelName}`);
+
+                const response = await fetch(`${Endpoint.Call.GetToken}?channelName=${channelName}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error:', response.status, errorText);
+                    throw new Error(`API error: ${response.status}`);
                 }
-            });
 
-            if (!response.ok) {
-                throw new Error(`Failed to join call: ${response.status}`);
+                console.log('API phản hồi thành công');
+                const data = await response.json();
+                console.log('Data từ API:', JSON.stringify(data));
+                
+                // Lấy token từ response thành công
+                const token = data.token;
+
+                // Khởi tạo engine nếu chưa
+                if (!this.engine) {
+                    console.log('Khởi tạo Agora engine...');
+                    await this.init();
+                }
+
+                // Đảm bảo engine đã được khởi tạo
+                if (!this.engine) {
+                    throw new Error('Engine không được khởi tạo');
+                }
+
+                // ĐỒng nhất với cách gọi trong Agora-RN-Quickstart
+                console.log('Tham gia kênh với token: ', token ? token.substr(0, 20) + '...' : 'undefined');
+                await this.engine.joinChannel(token, channelName,0, {});
+                console.log('Tham gia kênh thành công');
+
+                return {
+                    success: true,
+                    channelName,
+                    token
+                };
+            } catch (apiError) {
+                console.error('API error detail:', apiError);
+                throw apiError; // Chuyển tiếp lỗi để xử lý ở catch ngoài
             }
-
-            const data = await response.json();
-            const { token } = data;
-
-            // Khởi tạo engine nếu chưa
-            if (!this.engine) {
-                await this.init();
-            }
-
-            // Tham gia kênh - giống như Agora-RN-Quickstart
-            await this.engine?.joinChannel(token, channelName, 0, {});
-            console.log('Successfully joined channel');
-
-            return {
-                success: true,
-                channelName,
-                token
-            };
         } catch (error: any) {
             console.error('Error joining call:', error);
+            
+            // Cải thiện thông báo lỗi
+            let errorMessage = 'Không thể tham gia cuộc gọi';
+            if (error.message?.includes('Network request failed')) {
+                errorMessage = 'Không thể kết nối tới server. Kiểm tra kết nối mạng của bạn.';
+            }
+            
             return {
                 success: false,
-                error: error.message || 'Không thể tham gia cuộc gọi'
+                error: errorMessage
             };
         }
     }
@@ -173,6 +232,42 @@ class CallService {
             }
         } catch (error) {
             console.error('Error releasing Agora engine:', error);
+        }
+    }
+
+    async setupAndJoinChannel(channelId: string) {
+        try {
+            // 1. Khởi tạo engine nếu chưa có
+            if (!this.engine) {
+                console.log('Khởi tạo Agora engine...');
+                await this.init();
+            }
+            
+            // 2. Thiết lập các sự kiện TRƯỚC KHI join channel
+            this.engine?.addListener('onJoinChannelSuccess', (connection, uid) => {
+                console.log('Successfully joined channel', connection.channelId, 'with uid', uid);
+            });
+
+            this.engine?.addListener('onError', (err) => {
+                console.error('Agora error:', err);
+            });
+            
+            // 3. Thử join channel với token rỗng (như Agora-RN-Quickstart)
+            console.log('Thử tham gia kênh trực tiếp với token rỗng...');
+            try {
+                await this.engine?.joinChannel('', channelId, 0, {});
+                console.log('Join channel thành công với token rỗng!');
+                return { success: true };
+            } catch (joinError) {
+                console.log('Không thể join với token rỗng, thử lấy token từ server...');
+                await this.init();
+                // 4. Nếu không được, thì thử lấy token từ server
+                const result = await this.joinCall(channelId);
+                return result;
+            }
+        } catch (error: any) {
+            console.error('Error in setupAndJoinChannel:', error);
+            return { success: false, error: error.message };
         }
     }
 }
