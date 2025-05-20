@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     SafeAreaView,
     Platform,
+    Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
@@ -42,17 +43,27 @@ const IncomingCallScreen = () => {
     const rejectCall = useCallback(async () => {
         try {
             const userToken = await AsyncStorage.getItem('token');
-
-            if (userToken) {
-                await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${userToken}`,
-                    }
-                });
+            if (!userToken) {
+                Alert.alert('Lỗi xác thực', 'Vui lòng đăng nhập lại');
+                return;
             }
-        } catch (error) {
-            console.error('Error rejecting call:', error);
+            // Thêm timeout cho fetch request
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+            await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${userToken}` },
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                Alert.alert('Không thể kết nối', 'Yêu cầu bị hủy do quá thời gian');
+            } else {
+                Alert.alert('Lỗi', 'Không thể từ chối cuộc gọi. Vui lòng thử lại.');
+            }
             navigation.goBack();
         }
     }, [navigation, channelId]);
