@@ -27,6 +27,7 @@ const ChatSlugScreen = () => {
 
     const route = useRoute();
     const { chatId, receiverId, name } = route.params;
+    // console.log("chatId, receiverId, name", chatId, receiverId, name);
 
     const getTokenStoraged = async () => {
         const storedToken = await AsyncStorage.getItem('token');
@@ -45,17 +46,19 @@ const ChatSlugScreen = () => {
 
 
     const GetMyChatLogAsync = async () => {
-        try {
-            const response = await conversationService.GetChatLogById(
-                String(chatId),
-                setLoading,
-            );
-            if (response) {
-                setChatLog(response);
-                scrollToBottom();
+        if (chatId) {
+            try {
+                const response = await conversationService.GetChatLogById(
+                    String(chatId),
+                    setLoading,
+                );
+                if (response) {
+                    setChatLog(response);
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error(error);
             }
-        } catch (error) {
-            console.error(error);
         }
     };
 

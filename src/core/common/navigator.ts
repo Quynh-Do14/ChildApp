@@ -14,36 +14,37 @@ export const bottomNavigator = [
         component: ProfileScreen,
         name: "Quản lý thông tin",
         icon: 'account-circle-outline',  // Hồ sơ người dùng
-        role: ['parent', 'child']
+        role: ['admin', 'parent', 'child']
     },
     {
         component: ChildrenScreen,
         name: "Danh sách trẻ",
         icon: 'human-child',
-        role: ['parent']
+        role: ['admin', 'parent']
     },
-    // {
-    //     component: MapScreen,
-    //     name: "Map",
-    //     icon: 'map-marker-radius-outline',  // Bản đồ / vị trí
-    // },
+    {
+        component: MapScreen,
+        name: "Map",
+        icon: 'map-marker-radius-outline',  // Bản đồ / vị trí
+        role: ['admin', 'parent', 'child']
+    },
     {
         component: InspectorScreen,
         name: "Quản lý người giám sát",
         icon: 'account-supervisor-outline',  // Người giám sát
-        role: ['parent', 'child']
+        role: ['admin', 'parent', 'child']
     },
     {
         component: MissionScreen,
         name: "Quản lý nhiệm vụ",
         icon: 'clipboard-check-outline',  // Nhiệm vụ / kiểm tra
-        role: ['parent', 'child']
+        role: ['admin', 'parent', 'child']
     },
     {
         component: ChatListScreen,
         name: "Trò chuyện",
         icon: 'chat-outline',  // Trò chuyện / nhắn tin
-        role: ['parent', 'child']
+        role: ['admin', 'parent', 'child']
     },
     {
         component: WebiewScreen,
@@ -55,7 +56,7 @@ export const bottomNavigator = [
         component: WebBLockScreen,
         name: "Trình duyệt bị chặn",
         icon: 'compass-off-outline',  // Trò chuyện / nhắn tin
-        role: ['parent']
+        role: ['admin', 'parent']
     },
     // {
     //     component: StaticScreen,

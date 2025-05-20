@@ -79,6 +79,22 @@ class UserService {
             setLoading(false);
         }
     }
+    async notificationSOS(setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.
+                post(Endpoint.Notification.SOS,
+                    {}
+                ).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
 }
 
 export default new UserService();

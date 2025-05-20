@@ -19,6 +19,58 @@ import { ChildState } from '../../../core/atoms/child/childState';
 import userService from '../../repositories/user/user.service';
 import inspectorService from '../../repositories/inspector/inspector.service';
 
+import { PermissionsAndroid, Platform } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
+
+const requestLocationPermission = async () => {
+    if (Platform.OS === 'android' && Platform.Version < 23) {
+        return true;
+    }
+
+    const hasFineLocation = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+    );
+
+    const hasCoarseLocation = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
+    );
+
+    if (hasFineLocation && hasCoarseLocation) {
+        return true;
+    }
+
+    const status = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+    ]);
+
+    return (
+        status[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] ===
+        PermissionsAndroid.RESULTS.GRANTED &&
+        status[PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION] ===
+        PermissionsAndroid.RESULTS.GRANTED
+    );
+};
+
+const getCurrentLocation = async () => {
+    requestLocationPermission().then((result) => {
+        if (result) {
+            Geolocation.getCurrentPosition(
+                (position) => {
+                    console.log(position);
+                    // position.coords.latitude - vĩ độ
+                    // position.coords.longitude - kinh độ
+                    // position.coords.accuracy - độ chính xác (mét)
+                    // position.coords.speed - tốc độ (m/s)
+                },
+                (error) => {
+                    console.log(error.code, error.message);
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+            );
+        }
+    });
+};
 const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) => {
     const [token, setToken] = useState<string>('');
     const [dataProfile, setDataProfile] = useRecoilState(ProfileState);
@@ -92,20 +144,22 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         GetMyInspectorAsync().then(() => { });
     }, []);
 
-    const handleSosCall = () => {
+    const handleSosCall = async () => {
         if (listInspector.length === 0) {
             Alert.alert("Thông báo", "Không có người giám sát để gọi.");
             return;
         }
-
-        Alert.alert(
-            "Gọi SOS",
-            "Bạn có chắc muốn gọi lần lượt tất cả số điện thoại giám sát?",
-            [
-                { text: "Hủy", style: "cancel" },
-                { text: "Gọi", onPress: () => callNext(0) }
-            ]
-        );
+        try {
+            await userService.notificationSOS(
+                () => { },
+            ).then((response) => {
+                if (response) {
+                    callNext(0)
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const callNext = (index: number) => {
@@ -179,7 +233,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
                 {
                     dataProfile?.data?.role === "child"
                     &&
-                    <TouchableOpacity onPress={handleSosCall} style={styles.round}>
+                    <TouchableOpacity onPress={getCurrentLocation} style={styles.round}>
                         <Text style={styles.textSOS}>SOS</Text>
                     </TouchableOpacity>
                 }

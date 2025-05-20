@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Platform,
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    Platform
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -22,14 +22,16 @@ type Props = {
     editable: boolean
 };
 
-const formatDate = (date?: Date | string): string => {
+const formatDateTime = (date?: Date): string => {
     if (!date) return '';
-    const d = typeof date === 'string' ? new Date(date) : date;
+    const d = new Date(date);
     if (isNaN(d.getTime())) return '';
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
 const InputDatePickerCommon = (props: Props) => {
@@ -46,19 +48,43 @@ const InputDatePickerCommon = (props: Props) => {
     } = props;
 
     const [value, setValue] = useState<Date | undefined>(undefined);
-    const [show, setShow] = useState<boolean>(false);
+    const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+    const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
 
-    const handleChangeDate = (event: any, selectedDate?: Date) => {
-        if (selectedDate) {
-            setValue(selectedDate);
-            setData({ [attribute]: selectedDate.toISOString() }); // hoặc .split('T')[0] nếu chỉ muốn YYYY-MM-DD
+    const handleDateChange = (event: any, selectedDate?: Date) => {
+        if (event.type === 'dismissed') {
+            setShowDatePicker(false);
+            return;
         }
-        setShow(false);
+        if (selectedDate) {
+            const newDate = new Date(selectedDate);
+            const currentTime = value || new Date();
+            newDate.setHours(currentTime.getHours());
+            newDate.setMinutes(currentTime.getMinutes());
+            setValue(newDate);
+            setShowDatePicker(false);
+            setShowTimePicker(true); // tiếp tục show picker giờ
+        }
     };
 
-    const showDatepicker = () => {
+    const handleTimeChange = (event: any, selectedTime?: Date) => {
+        if (event.type === 'dismissed') {
+            setShowTimePicker(false);
+            return;
+        }
+        if (selectedTime) {
+            const newDate = value || new Date();
+            newDate.setHours(selectedTime.getHours());
+            newDate.setMinutes(selectedTime.getMinutes());
+            setValue(newDate);
+            setData({ [attribute]: newDate.toISOString() });
+            setShowTimePicker(false);
+        }
+    };
+
+    const showPickers = () => {
         if (editable) {
-            setShow(true);
+            setShowDatePicker(true);
         }
     };
 
@@ -91,10 +117,10 @@ const InputDatePickerCommon = (props: Props) => {
 
     return (
         <View>
-            <TouchableOpacity onPress={showDatepicker}>
+            <TouchableOpacity onPress={showPickers}>
                 <TextInput
                     placeholder={label}
-                    value={formatDate(value)}
+                    value={formatDateTime(value)}
                     placeholderTextColor="#ABABAB"
                     onBlur={() => onBlur(false)}
                     editable={false}
@@ -114,12 +140,21 @@ const InputDatePickerCommon = (props: Props) => {
                 </View>
             </TouchableOpacity>
 
-            {show && (
+            {showDatePicker && (
                 <DateTimePicker
                     value={value || new Date()}
                     mode="date"
-                    display="spinner"
-                    onChange={handleChangeDate}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleDateChange}
+                />
+            )}
+
+            {showTimePicker && (
+                <DateTimePicker
+                    value={value || new Date()}
+                    mode="time"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleTimeChange}
                 />
             )}
         </View>
@@ -139,7 +174,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#ABABAB',
         marginBottom: 4,
         paddingVertical: 8,
-        paddingRight: 30, // để chừa chỗ cho icon
+        paddingRight: 30,
     },
     errorStyle: {
         borderBottomColor: '#f61a1a',

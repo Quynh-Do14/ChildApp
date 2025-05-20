@@ -28,7 +28,7 @@ type Inspector = {
     id: string;
     name: string;
     phoneNumber: string;
-    childrenIds: string[];
+    children: any
 };
 
 type InspectorFormData = {
@@ -105,12 +105,14 @@ const InspectorScreen = () => {
     }, []);
 
     const openSheet = (inspector?: Inspector) => {
+        console.log("inspector", inspector);
+
         if (inspector) {
             setEditingId(inspector.id);
             setDataRequest({
                 "name": inspector.name,
                 "phoneNumber": inspector.phoneNumber,
-                "childrenIds": inspector.childrenIds
+                "childrenIds": inspector?.children[0]?.id
             })
         }
         bottomSheetRef.current?.expand();
@@ -216,8 +218,6 @@ const InspectorScreen = () => {
             )}
         </View>
     );
-
-
 
     return (
         <KeyboardAvoidingView

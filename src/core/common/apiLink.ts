@@ -21,6 +21,7 @@ export class Endpoint {
         static Create = "/api/children"
         static Update = "/api/children"
         static Delete = "/api/children"
+
     }
     static Mission = class {
         static Get = "/missions/my-missions"
@@ -42,6 +43,7 @@ export class Endpoint {
         static RegisterToken = "/device-tokens/register"
         static UnregisterToken = "/device-tokens/unregister"
         static RegisterTokenEmail = "/device-tokens/register-email"
+        static SOS = "/notification/sos"
     }
     static BlockWeb = class {
         static Get = "/blocked/all/web"

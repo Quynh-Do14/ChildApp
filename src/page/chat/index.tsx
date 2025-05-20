@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native
 import React, { useEffect, useState } from 'react'
 import MainLayout from '../../infrastructure/common/layouts/layout'
 import conversationService from '../../infrastructure/repositories/conversation/conversation.service';
+import userService from '../../infrastructure/repositories/user/user.service';
 
 export const fakeConversations = [
     {
@@ -26,7 +27,11 @@ export const fakeConversations = [
 
 const ChatListScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState<boolean>(false);
+    const [tab, setTab] = useState<number>(1);
+
     const [myConversation, setMyConversation] = useState<any[]>([])
+    const [myChildren, setMyChildren] = useState<any[]>([])
+
     const GetMyConversationAsync = async () => {
         try {
             await conversationService.getMyConversation(
@@ -41,7 +46,22 @@ const ChatListScreen = ({ navigation }: any) => {
         }
     }
 
+    const GetMyChldrenAsync = async () => {
+        try {
+            await userService.getChild(
+                setLoading,
+            ).then((response) => {
+                if (response) {
+                    setMyChildren(response)
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     useEffect(() => {
+        GetMyChldrenAsync().then(() => { });
         GetMyConversationAsync().then(() => { });
     }, [])
     const renderItem = ({ item }: any) => (
@@ -72,16 +92,60 @@ const ChatListScreen = ({ navigation }: any) => {
         </TouchableOpacity>
     );
 
+    const renderItemUser = ({ item }: any) => (
+        <TouchableOpacity
+            style={styles.chatItem}
+            onPress={() => {
+                // Điều hướng sang màn ChatBotScreen (hoặc ChatDetailScreen)
+                navigation.navigate('ChatSlugScreen',
+                    {
+                        receiverId: item.id,
+                        name: item.name
+                    });
+            }}
+        >
+            <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+            </View>
+            <View style={styles.chatInfo}>
+                <Text style={styles.chatName}>{item.name}</Text>
+            </View>
+        </TouchableOpacity>
+    );
+    console.log("myChildren", myChildren);
+    console.log("myConversation", myConversation);
+
     return (
         <MainLayout title={'Trò chuyện'}>
             <View style={styles.container}>
-                <Text style={styles.header}>Danh sách trò chuyện</Text>
-                <FlatList
-                    data={myConversation}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContainer}
-                />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => setTab(1)}>
+                        <Text style={styles.headerText}>Danh sách trò chuyện</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setTab(2)}>
+                        <Text style={styles.headerText}>Danh bạ</Text>
+                    </TouchableOpacity>
+                </View>
+                {
+                    tab == 1
+                        ?
+                        <FlatList
+                            data={myConversation}
+                            renderItem={renderItem}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={styles.listContainer}
+                        />
+                        :
+                        <FlatList
+                            data={myChildren}
+                            renderItem={renderItemUser}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={styles.listContainer}
+                        />
+                }
+
+
+
             </View>
         </MainLayout>
 
@@ -93,24 +157,28 @@ export default ChatListScreen;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        padding: 20,
         backgroundColor: '#fff',
-        paddingTop: 12,
+        gap: 12,
     },
     header: {
-        fontSize: 18,
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center"
+    },
+    headerText: {
+        fontSize: 16,
         fontWeight: 'bold',
-        paddingHorizontal: 16,
-        marginBottom: 10,
         color: '#4f3f97',
     },
     listContainer: {
-        paddingHorizontal: 16,
     },
     chatItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
         borderBottomWidth: 1,
+        paddingVertical: 12,
         borderColor: '#eee',
     },
     avatarPlaceholder: {

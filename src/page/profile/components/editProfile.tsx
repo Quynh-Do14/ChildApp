@@ -11,6 +11,7 @@ import { useRecoilValue } from 'recoil';
 import { ProfileState } from '../../../core/atoms/profile/profileState';
 import { useNavigation } from '@react-navigation/native';
 import { configImageURL } from '../../../infrastructure/helper/helper';
+import ButtonCommon from '../../../infrastructure/common/components/button/button-common';
 
 
 const EditProfile = () => {

@@ -23,6 +23,7 @@ import SelectCommon from '../../infrastructure/common/components/input/select-co
 import { useRecoilValue } from 'recoil';
 import { ChildState } from '../../core/atoms/child/childState';
 import { ProfileState } from '../../core/atoms/profile/profileState';
+import InputNumberCommon from '../../infrastructure/common/components/input/input-number-common';
 
 type Mission = {
     id: string;
@@ -352,7 +353,7 @@ const MissionScreen = () => {
                         setValidate={setValidate}
                         submittedTime={submittedTime}
                     />
-                    <InputTextCommon
+                    <InputNumberCommon
                         label={"Điểm"}
                         attribute={"points"}
                         dataAttribute={dataRequest.points}

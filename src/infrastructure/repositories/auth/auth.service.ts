@@ -88,6 +88,8 @@ class AuthService {
     }
 
     async register(data: any, setLoading: Function) {
+        console.log("data", data);
+
         setLoading(true)
         try {
             return await RequestService.
