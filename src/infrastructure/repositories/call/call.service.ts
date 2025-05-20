@@ -73,7 +73,7 @@ class CallService {
             }
 
             // Tham gia kênh - giống như Agora-RN-Quickstart
-            await this.engine?.joinChannel(token, channelName, null, 0);
+            await this.engine?.joinChannel(token, channelName, 0, {});
             console.log('Successfully joined channel as caller');
 
             return {
@@ -117,7 +117,7 @@ class CallService {
             }
 
             // Tham gia kênh - giống như Agora-RN-Quickstart
-            await this.engine?.joinChannel(token, channelName, null, 0);
+            await this.engine?.joinChannel(token, channelName, 0, {});
             console.log('Successfully joined channel');
 
             return {
