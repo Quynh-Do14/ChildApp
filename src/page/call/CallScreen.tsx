@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
     View,
     TouchableOpacity,
@@ -24,24 +24,24 @@ const CallScreen = () => {
     const navigation = useNavigation();
     const route = useRoute<CallNavigationProp>();
     const { channelId, recipientName, isIncoming = false } = route.params;
-    
-    // Chỉ giữ lại các trạng thái cần thiết
-    const [isConnected, setIsConnected] = useState(false);
-    const [callDuration, setCallDuration] = useState(0);
-    const [callState, setCallState] = useState<'connecting' | 'connected' | 'ended'>('connecting');
 
-    // Timer cho thời lượng cuộc gọi
+    const [isJoined, setJoined] = useState(false);
+    const [peerIds, setPeerIds] = useState<number[]>([]);
+    const [callDuration, setCallDuration] = useState(0);
+
+    // Timer để đếm thời gian cuộc gọi
     useEffect(() => {
-        let timer: any;
-        if (isConnected) {
-            setCallState('connected');
+        let timer: NodeJS.Timeout | null = null;
+        if (isJoined) {
             timer = setInterval(() => {
                 setCallDuration(prev => prev + 1);
             }, 1000);
         }
 
-        return () => clearInterval(timer);
-    }, [isConnected]);
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [isJoined]);
 
     // Format thời gian
     const formatTime = (seconds: number) => {
@@ -50,93 +50,97 @@ const CallScreen = () => {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Xử lý khi người dùng tham gia
-    const handleUserJoined = useCallback((uid: any) => {
-        console.log('User joined:', uid);
-        setIsConnected(true);
-        callService.setCallConnected();
-    }, []);
-
-    // Define endCall function
+    // Kết thúc cuộc gọi
     const endCall = useCallback(async () => {
         try {
-            console.log('Ending call with channel ID:', channelId);
-            setCallState('ended');
+            // Rời khỏi kênh và cập nhật trạng thái
             await callService.endCall(channelId);
+
+            // Giải phóng engine
+            await callService.release();
+
+            // Quay về màn hình trước
             navigation.goBack();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error ending call:', error);
             navigation.goBack();
         }
-    }, [navigation, channelId]);
+    }, [channelId, navigation]);
 
-    // Xử lý khi người dùng rời đi
-    const handleUserOffline = useCallback((uid: any) => {
-        console.log('User offline:', uid);
-        setIsConnected(false);
-        endCall();
-    }, [endCall]);
-
-    // Tham gia kênh khi màn hình được mở
+    // Khởi tạo cuộc gọi
     useEffect(() => {
         const setupCall = async () => {
             try {
-                setCallState('connecting');
-                
-                console.log('Setting up call with channel ID:', channelId);
-                
-                // Đảm bảo engine được khởi tạo trước
-                const engineInitialized = await callService.initEngine();
-                if (!engineInitialized) {
-                    throw new Error('Failed to initialize Agora engine');
-                }
-                
-                // Tham gia cuộc gọi
-                const joinSuccess = await callService.joinCall(channelId);
-                
-                if (!joinSuccess) {
-                    console.error('Failed to join channel');
-                    Alert.alert(
-                        'Không thể kết nối',
-                        'Không thể tham gia cuộc gọi. Vui lòng kiểm tra kết nối mạng và thử lại.',
-                        [{ text: 'OK', onPress: () => navigation.goBack() }]
-                    );
+                // Khởi tạo engine
+                const initialized = await callService.init();
+                if (!initialized) {
+                    Alert.alert('Lỗi', 'Không thể khởi tạo dịch vụ cuộc gọi');
+                    navigation.goBack();
                     return;
                 }
-                
-                console.log('Successfully joined channel');
-                
-                // Thiết lập các sự kiện
-                const cleanup = callService.setupCallEvents(
-                    handleUserJoined,
-                    handleUserOffline
-                );
-                
-                return () => {
-                    cleanup();
-                    endCall(); // Đảm bảo cuộc gọi được kết thúc khi unmount
-                };
+
+                // Tham gia kênh
+                const result = await callService.joinCall(channelId);
+                if (!result.success) {
+                    Alert.alert('Lỗi', result.error || 'Không thể tham gia cuộc gọi');
+                    navigation.goBack();
+                    return;
+                }
+
+                // Lắng nghe sự kiện
+                callService.engine?.addListener('onJoinChannelSuccess', (connection) => {
+                    console.log('JoinChannelSuccess', connection);
+                    setJoined(true);
+                });
+
+                callService.engine?.addListener('onUserJoined', (connection, uid) => {
+                    console.log('UserJoined', connection, uid);
+                    if (peerIds.indexOf(uid) === -1) {
+                        setPeerIds(prev => [...prev, uid]);
+                    }
+                });
+
+                callService.engine?.addListener('onUserOffline', (connection, uid) => {
+                    console.log('UserOffline', connection, uid);
+                    setPeerIds(prev => {
+                        const updatedPeerIds = prev.filter(id => id !== uid);
+
+                        // Nếu không còn người dùng khác, tự động kết thúc
+                        if (updatedPeerIds.length <= 0) {
+                            endCall();
+                        }
+
+                        return updatedPeerIds;
+                    });
+                });
             } catch (error) {
                 console.error('Error setting up call:', error);
-                Alert.alert(
-                    'Lỗi cuộc gọi',
-                    'Đã xảy ra lỗi khi thiết lập cuộc gọi. Vui lòng thử lại sau.',
-                    [{ text: 'OK', onPress: () => navigation.goBack() }]
-                );
+                Alert.alert('Lỗi', 'Có lỗi xảy ra khi thiết lập cuộc gọi');
+                navigation.goBack();
             }
         };
-        
+
         setupCall();
-    }, [channelId, handleUserJoined, handleUserOffline, endCall, navigation]);
+
+        // Dọn dẹp khi component unmount
+        return () => {
+            if (callService.engine) {
+                callService.engine.removeAllListeners();
+            }
+        };
+    }, [channelId, navigation, peerIds, endCall]);
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.name}>{recipientName}</Text>
                 <Text style={styles.status}>
-                    {callState === 'connecting' && 'Đang kết nối...'}
-                    {callState === 'connected' && formatTime(callDuration)}
-                    {callState === 'ended' && 'Cuộc gọi đã kết thúc'}
+                    {!isJoined ? 'Đang kết nối...' : formatTime(callDuration)}
+                </Text>
+
+                {/* Hiển thị trạng thái người tham gia */}
+                <Text style={styles.participants}>
+                    {peerIds.length > 0 ? `${peerIds.length} người tham gia` : 'Đang đợi...'}
                 </Text>
             </View>
 
@@ -168,6 +172,11 @@ const styles = StyleSheet.create({
         color: '#aaa',
         fontSize: 16,
         marginTop: 8,
+    },
+    participants: {
+        color: '#aaa',
+        fontSize: 14,
+        marginTop: 4,
     },
     spacer: {
         flex: 1,

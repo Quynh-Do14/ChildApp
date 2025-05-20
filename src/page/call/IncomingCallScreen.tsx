@@ -13,7 +13,6 @@ import { useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navig
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Endpoint } from '../../core/common/apiLink';
 
-// Định nghĩa kiểu cho navigation stack
 type RootStackParamList = {
     CallScreen: {
         channelId: string;
@@ -25,18 +24,13 @@ type RootStackParamList = {
         channelId: string;
         callerImage?: string;
     };
-    // Thêm các màn hình khác nếu cần
 };
 
-// Định nghĩa kiểu cho route
 type IncomingCallScreenRouteProp = RouteProp<RootStackParamList, 'IncomingCallScreen'>;
 
 const IncomingCallScreen = () => {
-    // Sử dụng useRoute với kiểu đã định nghĩa
     const route = useRoute<IncomingCallScreenRouteProp>();
-    // Sử dụng useNavigation với kiểu đã định nghĩa
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
     const { callerName, channelId, callerImage } = route.params;
 
     // Từ chối cuộc gọi
@@ -47,26 +41,19 @@ const IncomingCallScreen = () => {
                 Alert.alert('Lỗi xác thực', 'Vui lòng đăng nhập lại');
                 return;
             }
-            // Thêm timeout cho fetch request
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-
+            
             await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${userToken}` },
-                signal: controller.signal
             });
-
-            clearTimeout(timeoutId);
-        } catch (error: any) {
-            if (error.name === 'AbortError') {
-                Alert.alert('Không thể kết nối', 'Yêu cầu bị hủy do quá thời gian');
-            } else {
-                Alert.alert('Lỗi', 'Không thể từ chối cuộc gọi. Vui lòng thử lại.');
-            }
+            
+            navigation.goBack();
+        } catch (error) {
+            console.error('Error rejecting call:', error);
+            Alert.alert('Lỗi', 'Không thể từ chối cuộc gọi');
             navigation.goBack();
         }
-    }, [navigation, channelId]);
+    }, [channelId, navigation]);
 
     // Tự động từ chối cuộc gọi sau 30 giây
     useEffect(() => {
