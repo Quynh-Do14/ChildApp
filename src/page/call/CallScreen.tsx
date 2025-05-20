@@ -87,7 +87,7 @@ const CallScreen = () => {
                 
                 console.log('Setting up call with channel ID:', channelId);
                 
-                const joinSuccess = await callService.joinChannel(channelId);
+                const joinSuccess = await callService.joinCall(channelId);
                 
                 if (!joinSuccess) {
                     console.error('Failed to join channel');

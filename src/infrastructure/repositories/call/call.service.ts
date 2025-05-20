@@ -2,6 +2,7 @@ import RtcEngine from 'react-native-agora';
 import { Platform, PermissionsAndroid, Alert, AppState } from 'react-native';
 import { requestMultiple, PERMISSIONS } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import { Endpoint } from '../../../core/common/apiLink';
 
 class CallService {
@@ -15,16 +16,20 @@ class CallService {
     }
 
     async requestPermissions() {
-        if (Platform.OS === 'android') {
-            await PermissionsAndroid.requestMultiple([
-                PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-                PermissionsAndroid.PERMISSIONS.CAMERA,
-            ]);
-        } else {
-            await requestMultiple([
-                PERMISSIONS.IOS.MICROPHONE,
-                PERMISSIONS.IOS.CAMERA,
-            ]);
+        try {
+            if (Platform.OS === 'android') {
+                const granted = await PermissionsAndroid.requestMultiple([
+                    PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+                ]);
+                
+                return granted['android.permission.RECORD_AUDIO'] === 'granted';
+            } else {
+                const result = await requestMultiple([PERMISSIONS.IOS.MICROPHONE]);
+                return result[PERMISSIONS.IOS.MICROPHONE] === 'granted';
+            }
+        } catch (err) {
+            console.error('Permission request error:', err);
+            return false;
         }
     }
 
@@ -42,77 +47,145 @@ class CallService {
     async joinChannel(channelId: string, uid: number = 0, providedToken?: string) {
         try {
             console.log(`Attempting to join channel: ${channelId}`);
-            
-            // Sử dụng token được cung cấp nếu có
-            if (providedToken) {
-              console.log('Using provided token');
-              await this.requestPermissions();
-              await this.initEngine();
-              await this.engine.joinChannel(providedToken, channelId, null, uid);
-              return true;
+
+            // 1. Kiểm tra kết nối mạng trước
+            const netInfo = await NetInfo.fetch();
+            if (!netInfo.isConnected) {
+                Alert.alert('Lỗi kết nối', 'Vui lòng kiểm tra kết nối internet của bạn');
+                return false;
             }
-            
-            // Nếu không có token, lấy từ API
+
+            // 2. Sử dụng token được cung cấp nếu có
+            if (providedToken) {
+                console.log('Using provided token');
+                const permissionGranted = await this.requestPermissions();
+                if (!permissionGranted) {
+                    Alert.alert('Cần quyền truy cập', 'Ứng dụng cần quyền truy cập microphone để thực hiện cuộc gọi');
+                    return false;
+                }
+
+                const engineInitialized = await this.initEngineWithRetry();
+                if (!engineInitialized) {
+                    Alert.alert('Lỗi kết nối', 'Không thể khởi tạo dịch vụ cuộc gọi');
+                    return false;
+                }
+
+                // 3. Sử dụng Promise với timeout để tránh chờ vô hạn
+                const joinResult = await Promise.race([
+                    this.engine.joinChannel(providedToken, channelId, null, uid),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Timeout joining channel')), 10000)
+                    )
+                ]);
+
+                console.log('Join channel result:', joinResult);
+                return true;
+            }
+
+            // 4. Nếu không có token, lấy từ API
             const userToken = await AsyncStorage.getItem('token');
             if (!userToken) {
                 console.error('User not authenticated');
-                throw new Error('User not authenticated');
+                Alert.alert('Lỗi xác thực', 'Vui lòng đăng nhập lại');
+                return false;
             }
 
-            // Lấy token từ backend với method GET rõ ràng và timeout
-            console.log(`Fetching Agora token from: ${Endpoint.Call.GetToken}?channelName=${channelId}`);
+            // 5. Lấy Agora token từ backend với xử lý lỗi tốt hơn
+            console.log(`Fetching Agora token for channel: ${channelId}`);
+            let agoraTokenData;
 
-            // Tạo controller để có thể abort request nếu quá thời gian
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            try {
+                // Sử dụng joinCall API thay vì get-token API trực tiếp
+                // Endpoint này đảm bảo cập nhật trạng thái cuộc gọi và tạo token
+                const response = await fetch(`${Endpoint.Call.Join}?channelName=${channelId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    // Sử dụng timeout dài hơn (20s)
+                    signal: new AbortController().signal,
+                });
 
-            const response = await fetch(`${Endpoint.Call.GetToken}?channelName=${channelId}`, {
-                method: 'GET', // Chỉ định method rõ ràng
-                headers: {
-                    'Authorization': `Bearer ${userToken}`,
-                    'Content-Type': 'application/json'
-                },
-                signal: controller.signal // Sử dụng signal từ controller
-            });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API error: ${response.status} - ${errorText}`);
+                }
 
-            // Clear timeout sau khi có response
-            clearTimeout(timeoutId);
+                agoraTokenData = await response.json();
 
-            // Kiểm tra response status
-            console.log(`Token API response status: ${response.status}`);
-
-            // Xử lý response không thành công
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`API error: ${response.status}`, errorText);
-                throw new Error(`Failed to get Agora token: ${response.status}`);
+                if (!agoraTokenData.token) {
+                    throw new Error('Token không hợp lệ từ server');
+                }
+            } catch (apiError) {
+                console.error('Token API error:', apiError);
+                Alert.alert('Lỗi kết nối', 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+                return false;
             }
 
-            // Parse response JSON
-            const data = await response.json();
-            console.log('Token API response:', data);
-
-            if (!data.token) {
-                console.error('No token in response:', data);
-                throw new Error('No Agora token in response');
+            // 6. Yêu cầu quyền và khởi tạo engine
+            const permissionGranted = await this.requestPermissions();
+            if (!permissionGranted) {
+                Alert.alert('Cần quyền truy cập', 'Ứng dụng cần quyền truy cập microphone để thực hiện cuộc gọi');
+                return false;
             }
 
-            // Yêu cầu quyền và khởi tạo engine
-            await this.requestPermissions();
-            await this.initEngine();
+            const engineInitialized = await this.initEngineWithRetry();
+            if (!engineInitialized) {
+                Alert.alert('Lỗi khởi tạo', 'Không thể khởi tạo dịch vụ cuộc gọi');
+                return false;
+            }
 
-            // Log thông tin trước khi join
-            console.log(`Joining Agora channel with token: ${data.token.substring(0, 20)}...`);
+            // 7. Tham gia kênh với token và xử lý lỗi chi tiết
+            try {
+                console.log(`Joining channel with token: ${agoraTokenData.token.substring(0, 20)}...`);
+                // Chú ý: thứ tự tham số đúng là (token, channelName, info, uid)
+                await this.engine.joinChannel(agoraTokenData.token, channelId, '', uid);
+                console.log('Successfully joined Agora channel');
+                return true;
+            } catch (joinError: any) {
+                console.error('Agora join channel error:', joinError);
 
-            // Tham gia kênh với token
-            await this.engine.joinChannel(data.token, channelId, null, uid);
-            console.log('Successfully joined Agora channel');
-
-            return true;
+                // 8. Phân loại lỗi từ Agora SDK
+                if (joinError.code === 17) {
+                    Alert.alert('Đã tham gia', 'Bạn đã tham gia kênh này');
+                    return true;
+                } else {
+                    Alert.alert('Lỗi tham gia kênh', 'Không thể tham gia cuộc gọi. Vui lòng thử lại.');
+                    return false;
+                }
+            }
         } catch (error) {
             console.error('Error joining channel:', error);
+            Alert.alert('Lỗi không xác định', 'Đã xảy ra lỗi khi tham gia cuộc gọi');
             return false;
         }
+    }
+
+    async initEngineWithRetry(retries = 2) {
+        for (let i = 0; i <= retries; i++) {
+            try {
+                if (!this.engine) {
+                    this.engine = await RtcEngine();
+                    await this.engine.initialize({
+                        appId: this.appId,
+                    });
+                    await this.engine.enableAudio();
+                    
+                    // Thêm event listener cho lỗi
+                    this.engine.addListener('Error', (err: any) => {
+                        console.error('Agora SDK Error:', err);
+                    });
+                }
+                return true;
+            } catch (error) {
+                console.error(`Engine init attempt ${i+1} failed:`, error);
+                if (i === retries) return false;
+                // Đợi 1s trước khi thử lại
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+        return false;
     }
 
     async leaveChannel() {
