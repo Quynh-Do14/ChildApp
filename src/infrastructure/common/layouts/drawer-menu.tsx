@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { bottomNavigator } from '../../../core/common/navigator';
@@ -7,12 +7,34 @@ import authService from '../../repositories/auth/auth.service';
 import { useRecoilValue } from 'recoil';
 import { ProfileState } from '../../../core/atoms/profile/profileState';
 import { configImageURL } from '../../helper/helper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Drawer = createDrawerNavigator();
 
 const CustomDrawerContent = ({ navigation }: any) => {
     const [loading, setLoading] = useState<boolean>(false);
+    const [token, setToken] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const dataProfile = useRecoilValue(ProfileState).data;
+
+    const getTokenStoraged = async () => {
+        try {
+            const storedToken = await AsyncStorage.getItem('token');
+            if (storedToken) {
+                setToken(storedToken);
+            }
+        }
+        catch (error) {
+            console.error(error);
+        }
+        finally {
+            setIsLoading(true);
+        }
+    };
+    useEffect(() => {
+        getTokenStoraged();
+    }, []);
+
     const onLogOutAsync = async () => {
         try {
             await authService.logout(setLoading).then(() => {
@@ -38,14 +60,18 @@ const CustomDrawerContent = ({ navigation }: any) => {
                         dataProfile?.avatar
                             ? { uri: configImageURL(dataProfile?.avatar) }
                             :
-                            require('../../../assets/images/myAvatar.png')
+                            require('../../../assets/images/avatar.png')
                     }
                     style={styles.avatar}
                 />
-                <View style={{ marginLeft: 10, flexDirection: "column", gap: 8 }}>
-                    <Text style={styles.name}>{dataProfile.name}</Text>
-                    <Text style={styles.class}>{dataProfile.email}</Text>
-                </View>
+                {
+                    isLoading
+                    &&
+                    <View style={{ marginLeft: 10, flexDirection: "column", gap: 8 }}>
+                        <Text style={styles.name}>{dataProfile.name}</Text>
+                        <Text style={styles.class}>{dataProfile.email}</Text>
+                    </View>
+                }
             </View>
 
             {/* Divider */}

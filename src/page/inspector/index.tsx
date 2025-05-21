@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 
 import MainLayout from '../../infrastructure/common/layouts/layout';
 import ButtonCommon from '../../infrastructure/common/components/button/button-common';
@@ -63,6 +63,7 @@ const InspectorScreen = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [listInspector, setListInspector] = useState<Inspector[]>([]);
+    const isFocused = useIsFocused();
 
     // Hooks and Recoil state
     const navigation = useNavigation<any>();
@@ -191,6 +192,11 @@ const InspectorScreen = () => {
         );
     };
 
+    useEffect(() => {
+        if (isFocused) {
+            fetchInspectors();
+        }
+    }, [isFocused]);
     // Render helpers
     const renderInspectorItem = ({ item }: { item: Inspector }) => (
         <View style={styles.guardianItem}>

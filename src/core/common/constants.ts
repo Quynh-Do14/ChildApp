@@ -87,14 +87,22 @@ export default class Constants {
     static InfoUser = class {
         static List = [
             {
-                value: "EditProfile",
+                value: "ViewProfile",
                 label: "Thông tin",
-                icon: "settings-sharp"
+                icon: "person-sharp",
+                roles: ["admin", "parent", "children"]
+            },
+            {
+                value: "EditProfile",
+                label: "Chỉnh sửa hồ sơ",
+                icon: "settings-sharp",
+                roles: ["admin", "parent",]
             },
             {
                 value: "ChangePasswordScreen",
                 label: "Đổi mật khẩu",
                 icon: "keypad",
+                roles: ["admin", "parent", "children"]
             },
         ]
     }

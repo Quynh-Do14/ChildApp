@@ -9,6 +9,7 @@ import InputDatePickerCommon from '../../infrastructure/common/components/input/
 import InputPasswordCommon from '../../infrastructure/common/components/input/input-password-common';
 import userService from '../../infrastructure/repositories/user/user.service';
 import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
+import { useIsFocused } from '@react-navigation/native';
 
 type Child = {
     id: string;
@@ -37,6 +38,7 @@ const ChildrenScreen = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [childrenList, setChildrenList] = useState<Child[]>([]);
+    const isFocused = useIsFocused();
 
     // Refs and constants
     const bottomSheetRef = useRef<BottomSheet>(null);
@@ -148,7 +150,11 @@ const ChildrenScreen = () => {
             },
         ]);
     };
-
+    useEffect(() => {
+        if (isFocused) {
+            fetchChildren();
+        }
+    }, [isFocused]);
     // Render helpers
     const renderChildItem = ({ item }: { item: Child }) => (
         <View style={styles.childItem}>

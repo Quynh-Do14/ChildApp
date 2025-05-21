@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -11,16 +11,71 @@ import { useRecoilValue } from 'recoil';
 import { ProfileState } from '../../../core/atoms/profile/profileState';
 import { useNavigation } from '@react-navigation/native';
 import { configImageURL } from '../../../infrastructure/helper/helper';
+import InputTextCommon from '../../../infrastructure/common/components/input/input-text-common';
 import ButtonCommon from '../../../infrastructure/common/components/button/button-common';
-
+import authService from '../../../infrastructure/repositories/auth/auth.service';
 
 const EditProfile = () => {
+  const [_data, _setData] = useState<any>({});
+  const [validate, setValidate] = useState<any>({});
+  const [submittedTime, setSubmittedTime] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
   const navigation = useNavigation<any>();
-  const dataProfile = useRecoilValue(ProfileState).data;
+  const dataProfileState = useRecoilValue(ProfileState).data;
   const onGoBack = () => {
     navigation.goBack();
   };
-  console.log("dataProfile", dataProfile);
+  const dataProfile = _data;
+  const setDataProfile = (data: any) => {
+    Object.assign(dataProfile, { ...data });
+    _setData({ ...dataProfile });
+  };
+
+  const isValidData = () => {
+    let allRequestOK = true;
+
+    setValidate({ ...validate });
+
+    Object.values(validate).forEach((it: any) => {
+      if (it.isError === true) {
+        allRequestOK = false;
+      }
+    });
+
+    return allRequestOK;
+  };
+
+  useEffect(() => {
+    if (dataProfile) {
+      setDataProfile({
+        name: dataProfileState?.name,
+        phoneNumber: dataProfileState.phoneNumber,
+      });
+    }
+  }, [dataProfileState]);
+
+  const onUpdateProfile = async () => {
+    await setSubmittedTime(Date.now());
+    if (isValidData()) {
+      try {
+        await authService.updateProfile(
+          {
+            name: dataProfile.name,
+            phoneNumber: dataProfile.phoneNumber,
+          },
+          setLoading,
+        )
+          .then(response => {
+            if (response) {
+              onGoBack()
+            }
+          });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
 
   return (
     <MainLayout
@@ -31,45 +86,33 @@ const EditProfile = () => {
     >
       <View style={styles.container}>
         <ScrollView>
-          <View style={styles.header}>
-            <Image
-              source={
-                dataProfile?.avatar
-                  ? { uri: configImageURL(dataProfile?.avatar) }
-                  :
-                  require('../../../assets/images/myAvatar.png')
-              }
-              style={styles.avatar}
-            />
-            <View style={styles.headerText}>
-              <Text style={styles.name}>{dataProfile.fullName}</Text>
-              <Text style={styles.className}>{dataProfile.majorName}</Text>
-            </View>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Tên</Text>
-            <Text style={[styles.value, styles.linkColor]}>{dataProfile.name}</Text>
-          </View>
+          <View style={styles.form}>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Email</Text>
-            <Text style={[styles.value, styles.linkColor]}>{dataProfile.email}</Text>
+            <InputTextCommon
+              label={"Tên"}
+              attribute={"name"}
+              dataAttribute={dataProfile.name}
+              isRequired={false}
+              setData={setDataProfile}
+              editable={true}
+              validate={validate}
+              setValidate={setValidate}
+              submittedTime={submittedTime}
+            />
+
+            <InputTextCommon
+              label={"SĐT"}
+              attribute={"phoneNumber"}
+              dataAttribute={dataProfile.phoneNumber}
+              isRequired={false}
+              setData={setDataProfile}
+              editable={true}
+              validate={validate}
+              setValidate={setValidate}
+              submittedTime={submittedTime}
+            />
+            <ButtonCommon title="Chỉnh sửa" onPress={onUpdateProfile} />
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>SĐT</Text>
-            <Text style={[styles.value, styles.linkColor]}>{dataProfile.phoneNumber}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Trạng thái</Text>
-            <Text style={styles.value}>Hoạt động</Text>
-          </View>
-          {
-            dataProfile.role == "child"
-            && <View style={styles.infoRow}>
-              <Text style={styles.label}>Điểm</Text>
-              <Text style={styles.value}>{dataProfile.points}</Text>
-            </View>
-          }
         </ScrollView>
       </View >
     </MainLayout >
@@ -85,6 +128,10 @@ const styles = StyleSheet.create({
     gap: 20,
     paddingTop: 20,
     paddingHorizontal: 20,
+  },
+  form: {
+    flexDirection: "column",
+    gap: 12
   },
   header: {
     flexDirection: 'row',

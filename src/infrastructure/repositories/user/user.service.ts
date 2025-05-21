@@ -95,6 +95,38 @@ class UserService {
             setLoading(false);
         }
     }
+
+    async getLocation(setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.
+                get(Endpoint.Notification.GetLocation).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async shareLocation(data: any, setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.
+                post(Endpoint.Notification.Location,
+                    data
+                ).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
 }
 
 export default new UserService();

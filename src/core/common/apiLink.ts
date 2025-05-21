@@ -4,9 +4,11 @@ export class Endpoint {
         static OTP = "/auth/child/login"
         static Signup = "/auth/signup"
         static Profile = "/users/profile"
-        static UpdateProfile = "/students/me"
+        static UpdateProfile = "/users/update-profile"
         static ResetPassword = "/auth/reset-password"
-        static ForgotPassword = "/api/auth/forgot-password"
+        static ForgotPassword = "/auth/forgot-password"
+        static ChangePassword = "/auth/change-password"
+
     }
 
     static Conversation = class {
@@ -44,6 +46,8 @@ export class Endpoint {
         static UnregisterToken = "/device-tokens/unregister"
         static RegisterTokenEmail = "/device-tokens/register-email"
         static SOS = "/notification/sos"
+        static Location = "/locations/add"
+        static GetLocation = "/locations/family"
     }
     static BlockWeb = class {
         static Get = "/blocked/all/web"

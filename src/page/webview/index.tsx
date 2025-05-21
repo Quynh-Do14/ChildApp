@@ -3,12 +3,15 @@ import { WebView } from 'react-native-webview';
 import MainLayout from '../../infrastructure/common/layouts/layout';
 import { Alert, Button, TextInput, View } from 'react-native';
 import blockService from '../../infrastructure/repositories/block/block.service';
+import { useIsFocused } from '@react-navigation/native';
 
 const WebiewScreen = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [browserList, setBrowerList] = useState<string[]>([]);
     const currentUrl = "https://www.google.com";
+    const isFocused = useIsFocused();
+
     const fetchWeb = async (loadingState: boolean = true) => {
         try {
             const response = await blockService.getByChild(
@@ -28,10 +31,15 @@ const WebiewScreen = () => {
         fetchWeb();
     }, []);
 
+    useEffect(() => {
+        if (isFocused) {
+            fetchWeb();
+        }
+    }, [isFocused]);
+
     const isBlockedUrl = (url: string) => {
         return browserList.some((blocked) => url.includes(blocked));
     };
-    console.log("browserList", browserList);
 
     return (
         <MainLayout title={'Trình duyệt'}>

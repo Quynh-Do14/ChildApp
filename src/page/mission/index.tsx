@@ -14,7 +14,7 @@ import LoadingFullScreen from '../../infrastructure/common/components/controls/l
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ButtonCommon from '../../infrastructure/common/components/button/button-common';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import InputTextCommon from '../../infrastructure/common/components/input/input-text-common';
 import InputDatePickerCommon from '../../infrastructure/common/components/input/input-date-common';
 import missionService from '../../infrastructure/repositories/mission/mission.service';
@@ -73,6 +73,7 @@ const MissionScreen = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [listMission, setListMission] = useState<Mission[]>([]);
+    const isFocused = useIsFocused();
 
     // Hooks and Recoil state
     const navigation = useNavigation<any>();
@@ -223,7 +224,11 @@ const MissionScreen = () => {
             },
         ]);
     };
-
+    useEffect(() => {
+        if (isFocused) {
+            fetchMissions();
+        }
+    }, [isFocused]);
     // Render helpers
     const renderMissionActions = (mission: Mission) => {
         if (mission.confirm) return null;

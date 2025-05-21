@@ -103,10 +103,23 @@ const ChatSlugScreen = () => {
     //         client.deactivate();
     //     };
     // }, []);
-
+    
     useEffect(() => {
-        GetMyChatLogAsync().then(() => { });
-    }, [])
+        let isMounted = true; // Tránh memory leak khi component unmount
+
+        const fetchDataWithDelay = async () => {
+            await GetMyChatLogAsync();
+            if (isMounted) {
+                setTimeout(fetchDataWithDelay, 5000); // Đợi 5s sau khi API hoàn thành
+            }
+        };
+
+        fetchDataWithDelay();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const onGoBack = () => {
         navigation.goBack();

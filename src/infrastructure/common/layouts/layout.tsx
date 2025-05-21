@@ -21,70 +21,47 @@ import inspectorService from '../../repositories/inspector/inspector.service';
 
 import { PermissionsAndroid, Platform } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
+import { LocationState } from '../../../core/atoms/location/locationState';
 
-const requestLocationPermission = async () => {
-    if (Platform.OS === 'android' && Platform.Version < 23) {
-        return true;
-    }
-
-    const hasFineLocation = await PermissionsAndroid.check(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-    );
-
-    const hasCoarseLocation = await PermissionsAndroid.check(
-        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
-    );
-
-    if (hasFineLocation && hasCoarseLocation) {
-        return true;
-    }
-
-    const status = await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-    ]);
-
-    return (
-        status[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] ===
-        PermissionsAndroid.RESULTS.GRANTED &&
-        status[PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION] ===
-        PermissionsAndroid.RESULTS.GRANTED
-    );
-};
-
-const getCurrentLocation = async () => {
-    requestLocationPermission().then((result) => {
-        if (result) {
-            Geolocation.getCurrentPosition(
-                (position) => {
-                    console.log(position);
-                    // position.coords.latitude - vĩ độ
-                    // position.coords.longitude - kinh độ
-                    // position.coords.accuracy - độ chính xác (mét)
-                    // position.coords.speed - tốc độ (m/s)
-                },
-                (error) => {
-                    console.log(error.code, error.message);
-                },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
-            );
-        }
-    });
-};
 const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) => {
     const [token, setToken] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
     const [dataProfile, setDataProfile] = useRecoilState(ProfileState);
     const [, setDataChildren] = useRecoilState(ChildState);
     const [listInspector, setListInspector] = useState<any[]>([])
+    const [, setPosition] = useRecoilState(LocationState);
 
     const navigation = useNavigation<any>();
 
     const getTokenStoraged = async () => {
-        const storedToken = await AsyncStorage.getItem('token');
-        if (storedToken) {
-            setToken(storedToken);
+        try {
+            const storedToken = await AsyncStorage.getItem('token');
+            if (storedToken) {
+                setToken(storedToken);
+            }
+        }
+        catch (error) {
+            console.error(error);
+        }
+        finally {
+            setIsLoading(true);
         }
     };
+
+    useEffect(() => {
+        Geolocation.getCurrentPosition(
+            (position) => {
+                setPosition({
+                    data: position
+                })
+            },
+            (error) => {
+                console.log(error);
+            },
+            // { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+        );
+    }, [])
 
     useEffect(() => {
         getTokenStoraged();
@@ -214,7 +191,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
 
                 <View style={styles.textContainer}>
                     <Text style={styles.name}>
-                        {dataProfile?.data?.name}
+                        {isLoading && dataProfile?.data?.name}
                     </Text>
                     <Text style={styles.class}>{title}</Text>
                 </View>
@@ -233,7 +210,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
                 {
                     dataProfile?.data?.role === "child"
                     &&
-                    <TouchableOpacity onPress={getCurrentLocation} style={styles.round}>
+                    <TouchableOpacity onPress={handleSosCall} style={styles.round}>
                         <Text style={styles.textSOS}>SOS</Text>
                     </TouchableOpacity>
                 }

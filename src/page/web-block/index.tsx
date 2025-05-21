@@ -12,6 +12,7 @@ import blockService from '../../infrastructure/repositories/block/block.service'
 import { useRecoilValue } from 'recoil';
 import { ChildState } from '../../core/atoms/child/childState';
 import SelectCommon from '../../infrastructure/common/components/input/select-common';
+import { useIsFocused } from '@react-navigation/native';
 
 const WebBLockScreen = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -28,6 +29,7 @@ const WebBLockScreen = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [browserList, setBrowerList] = useState<any[]>([]);
+    const isFocused = useIsFocused();
 
     // Refs and constants
     const bottomSheetRef = useRef<BottomSheet>(null);
@@ -137,6 +139,13 @@ const WebBLockScreen = () => {
             },
         ]);
     };
+
+    useEffect(() => {
+        if (isFocused) {
+            fetchWeb();
+        }
+    }, [isFocused]);
+
     const renderItem = ({ item }: any) => (
         <View style={styles.browserItem}>
             <View style={styles.info}>

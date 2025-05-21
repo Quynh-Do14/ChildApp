@@ -64,6 +64,25 @@ const ChatListScreen = ({ navigation }: any) => {
         GetMyChldrenAsync().then(() => { });
         GetMyConversationAsync().then(() => { });
     }, [])
+
+    useEffect(() => {
+        let isMounted = true; // Tránh memory leak khi component unmount
+
+        const fetchDataWithDelay = async () => {
+            await GetMyConversationAsync();
+            if (isMounted) {
+                setTimeout(fetchDataWithDelay, 5000); // Đợi 5s sau khi API hoàn thành
+            }
+        };
+
+        fetchDataWithDelay();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+
     const renderItem = ({ item }: any) => (
         <TouchableOpacity
             style={styles.chatItem}
@@ -112,9 +131,6 @@ const ChatListScreen = ({ navigation }: any) => {
             </View>
         </TouchableOpacity>
     );
-    console.log("myChildren", myChildren);
-    console.log("myConversation", myConversation);
-
     return (
         <MainLayout title={'Trò chuyện'}>
             <View style={styles.container}>
@@ -143,9 +159,6 @@ const ChatListScreen = ({ navigation }: any) => {
                             contentContainerStyle={styles.listContainer}
                         />
                 }
-
-
-
             </View>
         </MainLayout>
 

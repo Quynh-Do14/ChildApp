@@ -15,9 +15,8 @@ import RegisterScreen from './src/page/Auth/register';
 import OtpVerificationScreen from './src/page/Auth/veriify-otp';
 import fcmService from './src/infrastructure/repositories/fcm/fcmService';
 import InAppNotification from './src/page/notification/InAppNotification';
-
-
-
+import ViewProfile from './src/page/profile/components/view';
+import ChangePasswordScreen from './src/page/Auth/changePassword';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -58,8 +57,10 @@ const StackNavigator = () => {
         <Stack.Screen name={"RegisterScreen"} component={RegisterScreen} />
         <Stack.Screen name={"OtpVerificationScreen"} component={OtpVerificationScreen} />
         <Stack.Screen name={"EditProfile"} component={EditProfile} />
+        <Stack.Screen name={"ViewProfile"} component={ViewProfile} />
         <Stack.Screen name={"ForgotPasswordScreen"} component={ForgotPasswordScreen} />
         <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
+        <Stack.Screen name={"ChangePasswordScreen"} component={ChangePasswordScreen} />
         <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
       </Stack.Navigator>
     );
@@ -72,6 +73,7 @@ function App(): React.JSX.Element {
 
   // Tham chiếu đến đối tượng NavigationContainer
   const navigationRef = React.useRef(null);
+
 
   useEffect(() => {
     // Khởi tạo FCM khi app khởi động

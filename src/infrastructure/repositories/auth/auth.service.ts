@@ -186,7 +186,22 @@ class AuthService {
         }
     }
 
-
+    async changePassword(data: any, setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.post(`${Endpoint.Auth.ChangePassword}`,
+                data
+            ).then(response => {
+                Alert.alert(`Đổi mật khẩu thành công`);
+                return response;
+            });
+        }
+        catch (error: any) {
+            Alert.alert(`Đổi mật khẩu không thành công`, error.response.data.message);
+        } finally {
+            setLoading(false);
+        }
+    }
 }
 
 export default new AuthService();
