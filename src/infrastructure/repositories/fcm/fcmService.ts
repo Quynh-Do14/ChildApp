@@ -12,22 +12,22 @@ class FCMService {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
         );
-        
+
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
           console.warn('Notification permission denied for Android 13+');
           return false;
         }
       }
-      
+
       // iOS notification permissions
       if (Platform.OS === 'ios') {
         const authStatus = await messaging().requestPermission();
         return (
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED || 
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
           authStatus === messaging.AuthorizationStatus.PROVISIONAL
         );
       }
-      
+
       return true;
     } catch (error) {
       console.error('Permission request error:', error);
@@ -113,36 +113,36 @@ class FCMService {
   // Sửa phương thức handleCallNotification
   handleCallNotification = (remoteMessage: any) => {
     try {
-        if (remoteMessage.data?.type === 'call') {
-            const channelId = remoteMessage.data.channelId;
-            const callerName = remoteMessage.data.callerName;
-            const callerId = remoteMessage.data.callerId;
-            
-            console.log('Received call notification:', {
-                channelId,
-                callerName,
-                callerId
-            });
-            
-            setTimeout(() => {
-                navigate('IncomingCallScreen', {
-                    channelId,
-                    callerName,
-                    callerId
-                });
-            }, 300);
-            
-            return true;
-        }
-        return false;
+      if (remoteMessage.data?.type === 'call') {
+        const channelId = remoteMessage.data.channelId;
+        const callerName = remoteMessage.data.callerName;
+        const callerId = remoteMessage.data.callerId;
+
+        console.log('Received call notification:', {
+          channelId,
+          callerName,
+          callerId
+        });
+
+        setTimeout(() => {
+          navigate('IncomingCallScreen', {
+            channelId,
+            callerName,
+            callerId
+          });
+        }, 300);
+
+        return true;
+      }
+      return false;
     } catch (error) {
-        console.error('Error handling call notification:', error);
-        return false;
+      console.error('Error handling call notification:', error);
+      return false;
     }
-};
+  };
 
   // Cập nhật phương thức navigateToCallScreen
-  navigateToCallScreen = (callData: any, retries = 5) => {
+  navigateToCallScreen = (callData: any) => {
     // Sử dụng navigate() thay vì navigationRef.current.navigate()
     navigate('IncomingCallScreen', {
       callerName: callData.callerName,
@@ -153,39 +153,6 @@ class FCMService {
   };
 
   setupMessageListeners(onNotificationReceived: any) {
-    // Hàm xử lý thông báo cuộc gọi chung
-    // this.handleCallNotification = (remoteMessage: any) => {
-    //   try {
-    //     console.log('Checking notification type:', remoteMessage?.data?.type);
-
-    //     if (remoteMessage.data && remoteMessage.data.type === 'call') {
-    //       // Xử lý dữ liệu cuộc gọi
-    //       const callData =
-    //         typeof remoteMessage.data.callData === 'string'
-    //           ? JSON.parse(remoteMessage.data.callData)
-    //           : remoteMessage.data.callData;
-
-    //       console.log('Processing call notification with data:', callData);
-
-    //       // Điều hướng đến màn hình cuộc gọi đến
-    //       if (navigationRef && navigationRef.current) {
-    //         navigationRef.current.navigate('IncomingCallScreen', {
-    //           callerName: callData.callerName,
-    //           channelId: callData.channelId,
-    //           callerImage: callData.callerImage || null,
-    //         });
-    //         return true;
-    //       } else {
-    //         console.error('Navigation reference is not available');
-    //       }
-    //     }
-    //     return false;
-    //   } catch (error) {
-    //     console.error('Error processing call notification:', error);
-    //     return false;
-    //   }
-    // };
-
     // Xử lý thông báo khi ứng dụng đang chạy ở foreground
     const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
       console.log('Foreground notification received:', remoteMessage);
