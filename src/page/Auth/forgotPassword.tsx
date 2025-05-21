@@ -20,7 +20,8 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                 setLoading
             ).then((response) => {
                 if (response) {
-                    navigation.navigate('ResetPasswordScreen');
+                    // navigation.navigate('ResetPasswordScreen');
+                    navigation.navigate('LoginScreen');
                 }
             });
         } catch (error) {

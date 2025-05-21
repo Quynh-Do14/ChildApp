@@ -6510,10 +6510,10 @@ react-native-gesture-handler@^2.25.0:
     hoist-non-react-statics "^3.3.0"
     invariant "^2.2.4"
 
-react-native-image-picker@^8.2.0:
-  version "8.2.0"
-  resolved "https://registry.npmjs.org/react-native-image-picker/-/react-native-image-picker-8.2.0.tgz"
-  integrity sha512-jIGllQJuJIn0YKss/JEeb0Kos1HSsnIpU+i3bYxR27sOxSyDZQyP9dKR22olssQPlfH+rGNR/Jc6xKRkhm48vw==
+react-native-image-picker@^8.2.1:
+  version "8.2.1"
+  resolved "https://registry.npmjs.org/react-native-image-picker/-/react-native-image-picker-8.2.1.tgz"
+  integrity sha512-FBeGYJGFDjMdGCcyubDJgBAPCQ4L1D3hwLXyUU91jY9ahOZMTbluceVvRmrEKqnDPFJ0gF1NVhJ0nr1nROFLdg==
 
 react-native-is-edge-to-edge@1.1.6:
   version "1.1.6"
@@ -6578,6 +6578,11 @@ react-native-screens@^4.10.0:
   dependencies:
     react-freeze "^1.0.0"
     warn-once "^0.1.0"
+
+react-native-sound@^0.11.2:
+  version "0.11.2"
+  resolved "https://registry.npmjs.org/react-native-sound/-/react-native-sound-0.11.2.tgz"
+  integrity sha512-LmGc8lgOK3qecYMVQpyHvww/C+wgT6sWeMpVbOe4NCRGC2yKd4fo4U0KBUo9PO7AqKESO3I/2GZg1/C0+bwiiA==
 
 react-native-vector-icons@^10.2.0:
   version "10.2.0"

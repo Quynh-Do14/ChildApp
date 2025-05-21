@@ -37,7 +37,7 @@ const ChangePasswordScreen = ({ navigation }: any) => {
         await setSubmittedTime(Date.now());
         if (isValidData()) {
 
-            if (dataProfile.newPassword !== dataProfile.confirmPassword) {
+            if (dataProfile.newPassword !== dataProfile.confirmNewPassword) {
                 Alert.alert('Mật khẩu mới và xác nhận mật khẩu không khớp');
                 return;
             }
@@ -46,7 +46,7 @@ const ChangePasswordScreen = ({ navigation }: any) => {
                     {
                         "oldPassword": dataProfile.oldPassword,
                         "newPassword": dataProfile.newPassword,
-                        "confirmPassword": dataProfile.confirmPassword
+                        "confirmNewPassword": dataProfile.confirmNewPassword
                     },
                     setLoading
                 ).then((response) => {
@@ -92,8 +92,8 @@ const ChangePasswordScreen = ({ navigation }: any) => {
 
                 <InputPasswordCommon
                     label={"Xác nhận mật khẩu"}
-                    attribute={"confirmPassword"}
-                    dataAttribute={dataProfile.confirmPassword}
+                    attribute={"confirmNewPassword"}
+                    dataAttribute={dataProfile.confirmNewPassword}
                     isRequired={false}
                     setData={setDataProfile}
                     validate={validate}

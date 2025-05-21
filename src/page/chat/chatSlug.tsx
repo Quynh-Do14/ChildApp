@@ -8,6 +8,8 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     TouchableWithoutFeedback,
+    Alert,
+    Image,
 } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import MainLayout from '../../infrastructure/common/layouts/layout';
@@ -15,6 +17,9 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import conversationService from '../../infrastructure/repositories/conversation/conversation.service';
 import { Client } from '@stomp/stompjs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import CheckPermission from '../../infrastructure/utils/CheckPermission';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const ChatSlugScreen = () => {
     const [inputText, setInputText] = useState('');
@@ -24,6 +29,7 @@ const ChatSlugScreen = () => {
     const [loading, setLoading] = useState<boolean>(false);
 
     const [token, setToken] = useState<string>('');
+    const [imageUri, setImageUri] = useState(null);
 
     const route = useRoute();
     const { chatId, receiverId, name } = route.params;
@@ -54,7 +60,7 @@ const ChatSlugScreen = () => {
                 );
                 if (response) {
                     setChatLog(response);
-                    scrollToBottom();
+                    // scrollToBottom();
                 }
             } catch (error) {
                 console.error(error);
@@ -103,7 +109,7 @@ const ChatSlugScreen = () => {
     //         client.deactivate();
     //     };
     // }, []);
-    
+
     useEffect(() => {
         let isMounted = true; // Tránh memory leak khi component unmount
 
@@ -132,7 +138,8 @@ const ChatSlugScreen = () => {
             await conversationService.SendMessage(
                 {
                     receiverId: receiverId,
-                    message: inputText
+                    message: inputText,
+                    file: imageUri
                 },
                 setLoading,
             );
@@ -150,6 +157,34 @@ const ChatSlugScreen = () => {
         }
     };
 
+    const sendImageMessage = async (uri: string) => {
+        console.log("uri", uri);
+
+        const formData = new FormData();
+        formData.append('receiverId', receiverId.toString());
+        formData.append('message', ''); // nếu có chú thích
+        formData.append('file', {
+            uri,
+            name: 'photo.jpg',
+            type: 'image/jpeg',
+        });
+
+        try {
+            await conversationService.SendMessage(
+                formData,
+                setLoading,
+            );
+
+            await GetMyChatLogAsync();
+
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const renderItem = ({ item }: any) => {
         const isSender = item.sender == null ? false : true;
         return (
@@ -159,9 +194,42 @@ const ChatSlugScreen = () => {
                     isSender ? styles.userMessage : styles.botMessage,
                 ]}
             >
-                <Text style={styles.messageText}>{item.message}</Text>
+                {
+                    item.type == "IMG"
+                        ?
+                        <Image
+                            source={{ uri: `http://103.216.117.244:9999/files/preview/${item.message}` }}
+                            style={{ width: 200, height: 400 }}
+                            resizeMode="cover"
+                        />
+                        :
+                        <Text style={styles.messageText}>{item.message}</Text>
+
+                }
             </View>
         );
+    };
+
+    const requestPhotoPermission = async () => {
+        CheckPermission.requestPhotoLibraryPermission(
+            async () => pickImage(),
+            permission => {
+                Alert.alert(
+                    'Quyền bị từ chối',
+                    'Vui lòng vào Cài đặt để cấp quyền Camera và Thư viện ảnh.',
+                );
+                return false;
+            },
+        );
+    };
+
+    const pickImage = async () => {
+        launchImageLibrary({ mediaType: 'photo' }, (response: any) => {
+            if (!response.didCancel && response.assets) {
+                setImageUri(response.assets[0].uri);
+                sendImageMessage(response.assets[0].uri);
+            }
+        });
     };
 
     return (
@@ -191,6 +259,13 @@ const ChatSlugScreen = () => {
                                 onSubmitEditing={handleSend}
                                 returnKeyType="send"
                             />
+                            <TouchableOpacity onPress={requestPhotoPermission} style={styles.sendButton}>
+                                <Ionicons
+                                    name={"camera-outline"}
+                                    size={20}
+                                    color={"#FFF"}
+                                />
+                            </TouchableOpacity>
                             <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
                                 <Text style={styles.sendText}>Gửi</Text>
                             </TouchableOpacity>

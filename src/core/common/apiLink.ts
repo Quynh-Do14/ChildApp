@@ -7,7 +7,7 @@ export class Endpoint {
         static UpdateProfile = "/users/update-profile"
         static ResetPassword = "/auth/reset-password"
         static ForgotPassword = "/auth/forgot-password"
-        static ChangePassword = "/auth/change-password"
+        static ChangePassword = "/users/change-password"
 
     }
 
@@ -45,7 +45,7 @@ export class Endpoint {
         static RegisterToken = "/device-tokens/register"
         static UnregisterToken = "/device-tokens/unregister"
         static RegisterTokenEmail = "/device-tokens/register-email"
-        static SOS = "/notification/sos"
+        static SOS = "/notifications/sos"
         static Location = "/locations/add"
         static GetLocation = "/locations/family"
     }

@@ -126,17 +126,18 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
             Alert.alert("Thông báo", "Không có người giám sát để gọi.");
             return;
         }
+        callNext(0)
         try {
             await userService.notificationSOS(
                 () => { },
             ).then((response) => {
                 if (response) {
-                    callNext(0)
                 }
             });
         } catch (error) {
             console.error(error);
         }
+
     };
 
     const callNext = (index: number) => {

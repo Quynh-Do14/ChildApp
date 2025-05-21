@@ -2,6 +2,7 @@ import messaging from '@react-native-firebase/messaging';
 import { Platform, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Endpoint } from '../../../core/common/apiLink';
+import Sound from 'react-native-sound';
 
 class FCMService {
   /**
@@ -147,6 +148,26 @@ class FCMService {
     }
   }
 
+  private playNotificationSound(message: string) {
+    const soundFile = message.includes('SOS') ? 'sos.mp3' : 'notification.mp3'; // File âm thanh tư{
+    console.log("message", message);
+    // Khởi tạo âm thanh (đặt file trong thư mục res/raw (Android) hoặc Resources (iOS))
+    const sound = new Sound(
+      soundFile, // Tên file âm thanh (không cần đuổi .mp3 trên iOS)
+      Sound.MAIN_BUNDLE,  // Load từ bundle gốc
+      (error) => {
+        if (error) {
+          console.log('Lỗi tải âm thanh', error);
+          return;
+        }
+        sound.play((success) => {
+          if (!success) console.log('Phát âm thanh thất bại');
+          sound.release(); // Giải phóng bộ nhớ
+        });
+      }
+    );
+  }
+
   /**
    * Thiết lập các bộ lắng nghe cho thông báo
    */
@@ -154,12 +175,16 @@ class FCMService {
     // Xử lý thông báo khi ứng dụng đang chạy ở foreground
     const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
       console.log('Foreground notification received:', remoteMessage);
+      const title = remoteMessage.notification?.title
+      this.playNotificationSound(String(title))
       onNotificationReceived(remoteMessage);
     });
 
     // Xử lý khi user nhấn vào thông báo và mở ứng dụng từ background
     const unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
       console.log('Notification opened app from background:', remoteMessage);
+      const title = remoteMessage.notification?.title
+      this.playNotificationSound(String(title))
       onNotificationReceived(remoteMessage);
     });
 
@@ -169,6 +194,8 @@ class FCMService {
       .then(remoteMessage => {
         if (remoteMessage) {
           console.log('App opened from quit state by notification:', remoteMessage);
+          const title = remoteMessage.notification?.title
+          this.playNotificationSound(String(title))
           onNotificationReceived(remoteMessage);
         }
       });
