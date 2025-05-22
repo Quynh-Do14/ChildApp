@@ -71,58 +71,77 @@ const CallScreen = () => {
     useEffect(() => {
         const setupCall = async () => {
             try {
+                console.log('[CallScreen] Setting up call, channelId:', channelId);
+
                 // Khởi tạo engine
                 const initialized = await callService.init();
                 if (!initialized) {
+                    console.error('[CallScreen] Không thể khởi tạo dịch vụ cuộc gọi');
                     Alert.alert('Lỗi', 'Không thể khởi tạo dịch vụ cuộc gọi');
                     navigation.goBack();
                     return;
                 }
 
+                console.log('[CallScreen] Engine initialized successfully');
+
                 // Tham gia kênh
                 const result = await callService.joinCall(channelId);
                 if (!result.success) {
+                    console.error('[CallScreen] Join call error:', result.error);
                     Alert.alert('Lỗi', result.error || 'Không thể tham gia cuộc gọi');
                     navigation.goBack();
                     return;
                 }
 
-                // Lắng nghe sự kiện
-                callService.engine?.addListener('onJoinChannelSuccess', (connection, uid) => {
-                    console.log('[CallScreen] JoinChannelSuccess', connection, uid);
-                    setJoined(true);
-                });
+                console.log('[CallScreen] Joined call successfully, setting up listeners');
 
-                callService.engine?.addListener('onUserJoined', (connection, uid, elapsed) => {
-                    console.log('[CallScreen] UserJoined', connection, uid, elapsed);
-                    if (peerIds.indexOf(uid) === -1) {
-                        setPeerIds(prev => [...prev, uid]);
-                    }
-                });
+                // Lắng nghe sự kiện - đảm bảo xóa listeners trước khi thiết lập
+                if (callService.engine) {
+                    callService.engine.removeAllListeners();
 
-                callService.engine?.addListener('onUserOffline', (connection, uid, reason) => {
-                    console.log('[CallScreen] UserOffline', connection, uid, reason);
-                    setPeerIds(prev => {
-                        const updatedPeerIds = prev.filter(id => id !== uid);
-                        
-                        // Nếu không còn người dùng khác, tự động kết thúc
-                        if (updatedPeerIds.length <= 0) {
-                            setTimeout(() => endCall(), 1000); // Thêm một chút delay
-                        }
-                        
-                        return updatedPeerIds;
+                    callService.engine.addListener('onJoinChannelSuccess', (connection, uid) => {
+                        console.log('[CallScreen] JoinChannelSuccess', connection, uid);
+                        setJoined(true);
                     });
-                });
 
-                callService.engine?.addListener('onError', (err) => {
-                    console.error('[CallScreen] Agora Error:', err);
-                    Alert.alert('Lỗi kết nối', 'Có lỗi xảy ra trong quá trình kết nối');
-                });
+                    callService.engine.addListener('onUserJoined', (connection, uid, elapsed) => {
+                        console.log('[CallScreen] UserJoined', uid);
+                        setPeerIds(prev => {
+                            if (prev.indexOf(uid) === -1) {
+                                console.log('[CallScreen] Adding new peer', uid);
+                                return [...prev, uid];
+                            }
+                            return prev;
+                        });
+                    });
+
+                    callService.engine.addListener('onUserOffline', (connection, uid, reason) => {
+                        console.log('[CallScreen] UserOffline', uid, reason);
+                        setPeerIds(prev => {
+                            const updatedPeerIds = prev.filter(id => id !== uid);
+                            console.log('[CallScreen] Updated peerIds after user left:', updatedPeerIds);
+
+                            // Nếu không còn người dùng khác, tự động kết thúc sau 3s
+                            if (updatedPeerIds.length <= 0 && isJoined) {
+                                console.log('[CallScreen] No peers left, ending call in 3s');
+                                setTimeout(() => endCall(), 3000);
+                            }
+
+                            return updatedPeerIds;
+                        });
+                    });
+
+                    callService.engine.addListener('onError', (err) => {
+                        console.error('[CallScreen] Agora Error:', err);
+                        Alert.alert('Lỗi kết nối', 'Có lỗi xảy ra trong quá trình kết nối');
+                    });
+
+                    console.log('[CallScreen] All listeners set up successfully');
+                }
             } catch (error) {
                 console.error('Error setting up call:', error);
                 Alert.alert('Lỗi', 'Có lỗi xảy ra khi thiết lập cuộc gọi');
                 navigation.goBack();
-                setTimeout(() => navigation.goBack(), 10);
             }
         };
 
@@ -130,11 +149,12 @@ const CallScreen = () => {
 
         // Dọn dẹp khi component unmount
         return () => {
+            console.log('[CallScreen] Cleaning up');
             if (callService.engine) {
                 callService.engine.removeAllListeners();
             }
         };
-    }, [channelId, navigation, peerIds, endCall]);
+    }, [channelId, navigation, endCall, isJoined]);
 
     return (
         <SafeAreaView style={styles.container}>
