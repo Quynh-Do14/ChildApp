@@ -48,7 +48,7 @@ export class Endpoint {
         static SOS = "/notifications/sos"
         static Location = "/locations/add"
         static GetLocation = "/locations/family"
-        static Pin = "/locations/add"
+        static Pin = "/battery/create"
 
     }
     static BlockWeb = class {

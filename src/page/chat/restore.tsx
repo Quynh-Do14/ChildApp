@@ -20,6 +20,7 @@ const RestoreScreen = () => {
         Object.assign(dataRequest, { ...data });
         _setData({ ...dataRequest });
     };
+    const isFocused = useIsFocused();
 
     const isValidData = () => {
         let allRequestOK = true;
@@ -38,7 +39,6 @@ const RestoreScreen = () => {
     const [submittedTime, setSubmittedTime] = useState<number | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [listFolder, setListFolder] = useState<any[]>([]);
-    const isFocused = useIsFocused();
     // Hooks and Recoil state
     const navigation = useNavigation<any>();
     const bottomSheetRef = useRef<BottomSheet>(null);
@@ -163,9 +163,12 @@ const RestoreScreen = () => {
         </TouchableOpacity>
     );
 
+    useEffect(() => {
+        if (isFocused) {
+            fetchFolders();
+        }
+    }, [isFocused]);
     return (
-
-
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{ flex: 1 }}

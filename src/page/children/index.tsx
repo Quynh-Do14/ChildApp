@@ -16,6 +16,7 @@ type Child = {
     name: string;
     phoneNumber: string;
     accessCode: string;
+    batteryLevel: string
 };
 
 type ChildFormData = {
@@ -43,6 +44,7 @@ const ChildrenScreen = () => {
     // Refs and constants
     const bottomSheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ['90%'], []);
+    console.log("childrenList", childrenList);
 
     const isValidData = () => {
         let allRequestOK = true;
@@ -162,6 +164,9 @@ const ChildrenScreen = () => {
                 <Text style={styles.name}>{item.name}</Text>
                 <Text style={styles.details}>
                     Mã: {item.accessCode} | SĐT: {item.phoneNumber}
+                </Text>
+                <Text style={styles.details}>
+                    Mức pin: {item.batteryLevel} %
                 </Text>
             </View>
             <View style={styles.actions}>

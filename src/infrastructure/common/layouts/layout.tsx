@@ -257,7 +257,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         try {
             await userService.sharePin(
                 {
-                    "level": level,
+                    "batteryLevel": level,
                 },
                 () => { }
             ).then(() => { });
@@ -265,13 +265,23 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
             console.error(error);
         }
     };
+    
     useEffect(() => {
         const fetchBattery = async () => {
             const level = await DeviceInfo.getBatteryLevel(); // trả về số từ 0 -> 1
             onSharePinAsync(Math.round(level * 100));
         };
 
+        // Gọi lần đầu khi component mount
         fetchBattery();
+
+        // Thiết lập interval mỗi 5 phút
+        const interval = setInterval(() => {
+            fetchBattery();
+        }, 5 * 60 * 1000); // 5 phút = 300000ms
+
+        // Clear interval khi unmount
+        return () => clearInterval(interval);
     }, []);
 
 
