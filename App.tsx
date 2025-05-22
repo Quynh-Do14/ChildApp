@@ -24,7 +24,9 @@ import {
 } from './src/core/common/navigator';
 import CallHistoryScreen from './src/page/call/CallHistoryScreen';
 import messaging from '@react-native-firebase/messaging';
-import { TouchableOpacity, Text } from 'react-native';
+import { TouchableOpacity, Text, Alert } from 'react-native';
+import { Endpoint } from './src/core/common/apiLink';
+import callService from './src/infrastructure/repositories/call/call.service';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -240,19 +242,19 @@ function App(): React.JSX.Element {
                 console.log('Notification pressed:', JSON.stringify(notification));
                 try {
                   // Kiểm tra nếu là thông báo cuộc gọi từ tiêu đề
-                  const isCallNotification = 
-                    notification.title?.includes('Cuộc gọi') || 
+                  const isCallNotification =
+                    notification.title?.includes('Cuộc gọi') ||
                     notification.data?.type === 'call';
-                  
+
                   if (isCallNotification) {
                     // Trích xuất thông tin người gọi từ body
                     const callerName = notification.body.replace("Cuộc gọi từ ", "").trim();
-                    
+
                     // Sử dụng notification.data.id làm channelId
                     const channelId = notification.data.id;
-                    
+
                     console.log(`Detected call notification with: callerName=${callerName}, channelId=${channelId}`);
-                    
+
                     if (channelId) {
                       setTimeout(() => {
                         navigate('IncomingCallScreen', {
@@ -275,28 +277,73 @@ function App(): React.JSX.Element {
               onClose={() => setNotification(null)}
             />
           )}
-          {/* Thêm vào NavigationContainer trong App.tsx - để debug */}
-          {/* {__DEV__ && (
+          {/* Thêm Test Call Button vào đây */}
+          {__DEV__ && (
             <TouchableOpacity
               style={{
                 position: 'absolute',
                 bottom: 20,
                 right: 20,
-                backgroundColor: 'red',
+                backgroundColor: '#2196F3',
                 padding: 10,
                 borderRadius: 5,
+                elevation: 5,
               }}
-              onPress={() => {
-                console.log('Debug: Simulating call notification click');
-                navigate('IncomingCallScreen', {
-                  callerName: 'Test Caller',
-                  channelId: 'test-channel-1',
-                  callerImage: null,
-                });
+              onPress={async () => {
+                try {
+                  console.log('Test Call Button pressed');
+
+                  // Lấy token xác thực
+                  const userToken = await AsyncStorage.getItem('token');
+                  if (!userToken) {
+                    Alert.alert('Lỗi xác thực', 'Vui lòng đăng nhập lại');
+                    return;
+                  }
+
+                  // Gọi API /call/initiate
+                  const response = await fetch(`${Endpoint.Call.InitiateCall}`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${userToken}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      receiverId: 3
+                    })
+                  });
+
+                  if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error:', response.status, errorText);
+                    Alert.alert('Lỗi', `Không thể khởi tạo cuộc gọi: ${response.status}`);
+                    return;
+                  }
+
+                  const data = await response.json();
+                  console.log('API response:', data);
+
+                  if (data.status === 200 && data.channelName && data.token) {
+                    // Khởi tạo engine
+                    await callService.init();
+
+                    // Chuyển đến màn hình cuộc gọi
+                    navigate('CallScreen', {
+                      channelId: data.channelName,
+                      recipientName: 'Test User',
+                      token: data.token,
+                      isIncoming: false,
+                    });
+                  } else {
+                    Alert.alert('Lỗi', data.message || 'Không thể khởi tạo cuộc gọi');
+                  }
+                } catch (error) {
+                  console.error('Error in test call:', error);
+                  Alert.alert('Lỗi', 'Đã xảy ra lỗi khi khởi tạo cuộc gọi');
+                }
               }}>
-              <Text style={{color: 'white'}}>Test Call Nav</Text>
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Test Call</Text>
             </TouchableOpacity>
-          )} */}
+          )}
         </NavigationContainer>
       </RecoilRoot>
     </GestureHandlerRootView>
