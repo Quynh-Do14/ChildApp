@@ -107,6 +107,7 @@ function App(): React.JSX.Element {
   const [notification, setNotification] = useState<any>(null);
   const [pendingNotification, setPendingNotification] = useState<any>(null);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const [engineInitialized, setEngineInitialized] = useState(false);
   // const navigation = useNavigation();
   // Tham chiếu đến đối tượng NavigationContainer
 
@@ -221,6 +222,27 @@ function App(): React.JSX.Element {
       handlePendingNotification();
     }
   }, [pendingNotification, isNavigationReady, handlePendingNotification]);
+
+  // Khởi tạo engine gọi điện
+  useEffect(() => {
+    const initEngine = async () => {
+      if (!engineInitialized) {
+        const success = await callService.init();
+        if (success) {
+          setEngineInitialized(true);
+        }
+      }
+    };
+
+    initEngine();
+
+    return () => {
+      // Cleanup khi app đóng
+      if (engineInitialized) {
+        callService.release();
+      }
+    };
+  }, [engineInitialized]);
 
   // Phần return trong App.tsx
   return (

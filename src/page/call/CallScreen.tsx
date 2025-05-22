@@ -187,7 +187,7 @@ const CallScreen = () => {
                                 renderMode: 1, // 1 tương đương với VideoRenderMode.Hidden
                                 mirrorMode: 0
                             }}
-                            connection={{ channelId: channelId }}
+                            // connection={{ channelId: channelId }}
                             zOrderMediaOverlay={true}
                         />
                     ))}
@@ -209,7 +209,7 @@ const CallScreen = () => {
                         renderMode: 1, // 1 tương đương với VideoRenderMode.Hidden
                         mirrorMode: 1  // Mirror cho camera trước
                     }}
-                    connection={{ channelId: channelId }}
+                    // connection={{ channelId: channelId }}
                     zOrderMediaOverlay={true}
                 />
             </View>

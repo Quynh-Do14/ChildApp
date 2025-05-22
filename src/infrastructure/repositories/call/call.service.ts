@@ -195,6 +195,17 @@ class CallService {
                 // Xóa tất cả event listeners trước khi thiết lập lại
                 // this.engine.removeAllListeners();
 
+                // Đảm bảo rời khỏi kênh trước khi tham gia kênh mới
+                try {
+                    if (this.engine) {
+                        await this.engine.leaveChannel();
+                        console.log('Đã rời khỏi kênh trước đó');
+                    }
+                } catch (leaveError) {
+                    console.log('Không có kênh để rời hoặc lỗi khi rời kênh', leaveError);
+                    // Tiếp tục - không throw lỗi
+                }
+
                 // Tham gia kênh
                 console.log('Tham gia kênh với token:', token ? token.substr(0, 20) + '...' : 'undefined');
                 await this.engine.joinChannel(token, channelName, 0, {});
