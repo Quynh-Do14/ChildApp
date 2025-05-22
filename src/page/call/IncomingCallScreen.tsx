@@ -11,13 +11,14 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, NavigationProp, RouteProp, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Endpoint } from '../../core/common/apiLink';
+import callService from '../../infrastructure/repositories/call/call.service';
 
 type RootStackParamList = {
     CallScreen: {
         channelId: string;
         recipientName: string;
         isIncoming?: boolean;
+        token?: string;
     };
     IncomingCallScreen: {
         callerName: string;
@@ -41,12 +42,15 @@ const IncomingCallScreen = () => {
                 Alert.alert('Lỗi xác thực', 'Vui lòng đăng nhập lại');
                 return;
             }
-            
-            await fetch(`${Endpoint.Call.EndCall}?channelName=${channelId}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${userToken}` },
-            });
-            
+
+            const result = await callService.endCall(channelId);
+
+            if (result.success) {
+                console.log('Từ chối cuộc gọi thành công');
+            } else {
+                console.error('Lỗi từ chối cuộc gọi:', result.error);
+            }
+
             navigation.goBack();
         } catch (error) {
             console.error('Error rejecting call:', error);
@@ -65,17 +69,30 @@ const IncomingCallScreen = () => {
     }, [rejectCall]);
 
     // Chấp nhận cuộc gọi
-    const acceptCall = () => {
-        navigation.navigate({
-            name: 'CallScreen',
-            params: {
-                channelId,
-                recipientName: callerName,
-                isIncoming: true
-            },
-            merge: true
-        });
-    };
+    const acceptCall = useCallback(async () => {
+        try {
+            console.log('Đang chấp nhận cuộc gọi với channelId:', channelId);
+
+            // Gọi API join để lấy token và cập nhật trạng thái trên server
+            const result = await callService.joinCall(channelId);
+
+            if (result.success) {
+                console.log('Lấy token thành công, chuyển tới màn hình cuộc gọi');
+                navigation.navigate('CallScreen', {
+                    channelId,
+                    recipientName: callerName,
+                    token: result.token,
+                    isIncoming: true
+                });
+            } else {
+                console.error('Lỗi lấy token:', result.error);
+                Alert.alert('Lỗi', 'Không thể tham gia cuộc gọi');
+            }
+        } catch (error) {
+            console.error('Error accepting call:', error);
+            Alert.alert('Lỗi', 'Không thể tham gia cuộc gọi');
+        }
+    }, [channelId, callerName, navigation]);
 
     return (
         <SafeAreaView style={styles.container}>

@@ -1,4 +1,6 @@
 export class Endpoint {
+    static API_BASE = "https://5d6e-171-224-178-140.ngrok-free.app";
+
     static Auth = class {
         static Login = "/auth/login"
         static OTP = "/auth/child/login"
@@ -43,10 +45,10 @@ export class Endpoint {
         static UnregisterToken = "/device-tokens/unregister"
     }
     static Call = class {
-        static GetToken = "/call/get-token"
-        static History = "/call/history"
-        static InitiateCall = "/call/initiate"
-        static EndCall = "/call/end"
-        static Join = "/call/join"
+        static GetToken = `${Endpoint.API_BASE}/call/get-token`
+        static History = `${Endpoint.API_BASE}/call/history`
+        static InitiateCall = `${Endpoint.API_BASE}/call/initiate`
+        static EndCall = `${Endpoint.API_BASE}/call/end`
+        static Join = `${Endpoint.API_BASE}/call/join`
     }
 }
