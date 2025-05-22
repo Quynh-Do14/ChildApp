@@ -4,15 +4,20 @@ import {
     StyleSheet,
     Image,
     Text,
+    KeyboardAvoidingView,
+    Keyboard,
 } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import MainLayout from '../../infrastructure/common/layouts/layout';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import folderService from '../../infrastructure/repositories/folder/folder.service';
+import { TouchableWithoutFeedback } from '@gorhom/bottom-sheet';
+import { TextInput } from 'react-native-gesture-handler';
 
 const RestoreSlugScreen = () => {
     const navigation = useNavigation<any>();
+    const [inputText, setInputText] = useState('');
 
     const [chatLog, setChatLog] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -40,6 +45,7 @@ const RestoreSlugScreen = () => {
         try {
             const response = await folderService.getFolderbyId(
                 String(id),
+                inputText,
                 setLoading,
             );
             if (response) {
@@ -51,7 +57,7 @@ const RestoreSlugScreen = () => {
     };
     useEffect(() => {
         GetMyChatLogAsync()
-    }, [])
+    }, [inputText])
 
     const onGoBack = () => {
         navigation.goBack();
@@ -85,6 +91,19 @@ const RestoreSlugScreen = () => {
                     keyExtractor={(item, index) => item.id || index.toString()}
                     contentContainerStyle={styles.chatContainer}
                 />
+                <KeyboardAvoidingView behavior="padding">
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                value={inputText}
+                                onChangeText={setInputText}
+                                placeholder="Tìm kiếm tin nhắn..."
+                                returnKeyType="send"
+                            />
+                        </View>
+                    </TouchableWithoutFeedback>
+                </KeyboardAvoidingView>
             </View>
         </MainLayout>
     );

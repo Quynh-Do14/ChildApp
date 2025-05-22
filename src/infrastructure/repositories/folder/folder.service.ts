@@ -17,13 +17,16 @@ class FolderService {
             setLoading(false);
         }
     }
-    async getFolderbyId(id: string, setLoading: Function) {
+    async getFolderbyId(id: string, keyword: string, setLoading: Function) {
         console.log('id', id);
 
         setLoading(true)
         try {
             return await RequestService.
                 get(`${Endpoint.Folder.GetById}/${id}/messages`,
+                    {
+                        keyword: keyword
+                    }
                 ).then(response => {
                     return response;
                 });
