@@ -1,4 +1,4 @@
-import { createAgoraRtcEngine, IRtcEngine } from 'react-native-agora';
+import { ChannelProfileType, ClientRoleType, createAgoraRtcEngine, IRtcEngine } from 'react-native-agora';
 import { Platform, PermissionsAndroid } from 'react-native';
 import { requestMultiple, PERMISSIONS } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,54 +11,62 @@ class CallService {
     constructor() { }
 
     async requestPermissions() {
-        try {
-            if (Platform.OS === 'android') {
+        if (Platform.OS === 'android') {
+            try {
                 const granted = await PermissionsAndroid.requestMultiple([
                     PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-                    PermissionsAndroid.PERMISSIONS.CAMERA, // Thêm quyền camera
+                    PermissionsAndroid.PERMISSIONS.CAMERA
                 ]);
-                return granted['android.permission.RECORD_AUDIO'] === 'granted' && granted['android.permission.CAMERA'] === 'granted';
-            } else {
-                const result = await requestMultiple([PERMISSIONS.IOS.MICROPHONE, PERMISSIONS.IOS.CAMERA]);
-                return result[PERMISSIONS.IOS.MICROPHONE] === 'granted' && result[PERMISSIONS.IOS.CAMERA] === 'granted';
+
+                if (
+                    granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED &&
+                    granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED
+                ) {
+                    console.log('Permission granted');
+                    return true;
+                } else {
+                    console.log('Permission denied');
+                    return false;
+                }
+            } catch (err) {
+                console.warn(err);
+                return false;
             }
-        } catch (err) {
-            console.error('Permission request error:', err);
-            return false;
+        } else if (Platform.OS === 'ios') {
+            return true; // iOS xử lý quyền tự động
         }
     }
 
     async init() {
         try {
-            // Yêu cầu quyền microphone VÀ camera
             await this.requestPermissions();
-            
-            // Tạo engine nếu chưa có
-            if (!this.engine) {
-                this.engine = createAgoraRtcEngine();
-                
-                await this.engine.initialize({
-                    appId: this.appId,
-                    // Thêm các thiết lập video cần thiết
-                    // Ví dụ: frameRate, dimensions
-                });
-                
-                // Bật âm thanh
-                await this.engine.enableAudio();
-                
-                // Bật video
-                await this.engine.enableVideo();
-                
-                // Thiết lập cấu hình video
-                await this.engine.setVideoEncoderConfiguration({
-                    dimensions: {
-                        width: 640,
-                        height: 360
-                    },
-                    frameRate: 15,
-                    bitrate: 800
-                });
+
+            if (this.engine) {
+                console.log('Engine đã tồn tại, không khởi tạo lại');
+                return true;
             }
+
+            console.log('Khởi tạo Agora engine với AppID:', this.appId);
+            this.engine = createAgoraRtcEngine();
+
+            // Khởi tạo với config mới
+            this.engine.initialize({
+                appId: this.appId,
+                // Không cần channelProfile và clientRole ở đây
+            });
+
+            // Thiết lập các giá trị cấu hình
+            this.engine.setChannelProfile(ChannelProfileType.ChannelProfileLiveBroadcasting);
+            this.engine.setClientRole(ClientRoleType.ClientRoleBroadcaster);
+
+            // Bật audio
+            this.engine.enableAudio();
+
+            // Bật video
+            this.engine.enableVideo();
+            this.engine.startPreview();
+
+            console.log('Agora engine initialized successfully');
             return true;
         } catch (error) {
             console.error('Error initializing Agora engine:', error);

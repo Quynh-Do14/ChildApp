@@ -8,9 +8,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import callService from '../../infrastructure/repositories/call/call.service';
 // Import RtcLocalView và RtcRemoteView
 import {
-    RtcLocalView,
-    RtcRemoteView,
-    VideoRenderMode,
+    RtcSurfaceView,
+    ChannelProfileType,
+    ClientRoleType
 } from 'react-native-agora';
 
 type CallScreenParams = {
@@ -179,12 +179,15 @@ const CallScreen = () => {
             {peerIds.length > 0 ? (
                 <View style={styles.remoteVideoContainer}>
                     {peerIds.map(uid => (
-                        <RtcRemoteView.SurfaceView
+                        <RtcSurfaceView
                             key={uid}
                             style={styles.remoteVideo}
-                            uid={uid}
-                            channelId={channelId}
-                            renderMode={VideoRenderMode.Hidden}
+                            canvas={{
+                                uid: uid,
+                                renderMode: 1, // 1 tương đương với VideoRenderMode.Hidden
+                                mirrorMode: 0
+                            }}
+                            connection={{ channelId: channelId }}
                             zOrderMediaOverlay={true}
                         />
                     ))}
@@ -199,10 +202,14 @@ const CallScreen = () => {
             
             {/* Hiển thị video của người dùng hiện tại (local) */}
             <View style={styles.localVideoContainer}>
-                <RtcLocalView.SurfaceView
+                <RtcSurfaceView
                     style={styles.localVideo}
-                    channelId={channelId}
-                    renderMode={VideoRenderMode.Hidden}
+                    canvas={{
+                        uid: 0,  // Local user luôn là uid 0
+                        renderMode: 1, // 1 tương đương với VideoRenderMode.Hidden
+                        mirrorMode: 1  // Mirror cho camera trước
+                    }}
+                    connection={{ channelId: channelId }}
                     zOrderMediaOverlay={true}
                 />
             </View>
