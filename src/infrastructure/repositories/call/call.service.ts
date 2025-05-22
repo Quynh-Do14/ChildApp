@@ -15,7 +15,7 @@ class CallService {
             try {
                 const granted = await PermissionsAndroid.requestMultiple([
                     PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-                    PermissionsAndroid.PERMISSIONS.CAMERA
+                    PermissionsAndroid.PERMISSIONS.CAMERA,
                 ]);
 
                 if (
@@ -311,6 +311,29 @@ class CallService {
         } catch (error: any) {
             console.error('Error in setupAndJoinChannel:', error);
             return { success: false, error: error.message };
+        }
+    }
+
+    async reconnect(channelName: string, token?: string) {
+        try {
+            console.log('Đang cố gắng kết nối lại...');
+            if (this.engine) {
+                // Rời khỏi kênh trước
+                try {
+                    await this.engine.leaveChannel();
+                } catch (e) {
+                    console.log('Không thể rời kênh:', e);
+                }
+
+                // Tham gia lại kênh
+                await this.engine.joinChannel(token || '', channelName, Math.floor(Math.random() * 100000), {});
+                console.log('Đã kết nối lại thành công');
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Lỗi kết nối lại:', error);
+            return false;
         }
     }
 }

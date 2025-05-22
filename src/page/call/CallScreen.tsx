@@ -108,17 +108,26 @@ const CallScreen = () => {
                             return prev;
                         });
                     });
-                    
+
                     callService.engine.addListener('onUserOffline', (connection, uid) => {
                         console.log('[CallScreen] UserOffline', connection, uid);
                         setPeerIds(prev => {
                             const updatedPeerIds = prev.filter(id => id !== uid);
                             console.log('[CallScreen] Updated peerIds after user left:', updatedPeerIds);
 
-                            // Nếu không còn người dùng khác, tự động kết thúc sau 3s
-                            if (updatedPeerIds.length <= 0 && isJoined) {
-                                console.log('[CallScreen] No peers left, ending call in 3s');
-                                setTimeout(() => endCall(), 3000);
+                            // CHỈ tự động kết thúc nếu đã từng có peer và đã gọi ít nhất 30 giây
+                            if (updatedPeerIds.length <= 0 && prev.length > 0 && isJoined && callDuration > 30) {
+                                console.log('[CallScreen] All users disconnected, ending call in 10s');
+                                // Tăng timeout lên 10 giây thay vì 3 giây
+                                setTimeout(() => {
+                                    // Kiểm tra lại xem vẫn không có peer nào không
+                                    if (peerIds.length === 0) {
+                                        console.log('[CallScreen] No reconnection, ending call');
+                                        endCall();
+                                    } else {
+                                        console.log('[CallScreen] User reconnected, canceling auto-disconnect');
+                                    }
+                                }, 10000);
                             }
 
                             return updatedPeerIds;
@@ -158,7 +167,7 @@ const CallScreen = () => {
                 callService.engine.removeAllListeners();
             }
         };
-    }, [channelId, navigation, endCall, isJoined]);
+    }, [channelId, navigation, endCall, isJoined, callDuration, peerIds]);
 
     // Chức năng bật/tắt camera
     const toggleCamera = () => {
