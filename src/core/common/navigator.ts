@@ -1,4 +1,5 @@
 import ChatListScreen from "../../page/chat";
+import RestoreScreen from "../../page/chat/restore";
 import ChildrenScreen from "../../page/children";
 import InspectorScreen from "../../page/inspector";
 import MapScreen from "../../page/map";
@@ -44,6 +45,12 @@ export const bottomNavigator = [
         component: ChatListScreen,
         name: "Trò chuyện",
         icon: 'chat-outline',  // Trò chuyện / nhắn tin
+        role: ['admin', 'parent', 'child']
+    },
+    {
+        component: RestoreScreen,
+        name: "Lưu trữ tin nhắn",
+        icon: 'bookmark-outline',  // Trò chuyện / nhắn tin
         role: ['admin', 'parent', 'child']
     },
     {

@@ -20,6 +20,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import CheckPermission from '../../infrastructure/utils/CheckPermission';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import ModalFolderPicker from './modal';
+import { useRecoilValue } from 'recoil';
+import { FolderState } from '../../core/atoms/folder/folderState';
 
 const ChatSlugScreen = () => {
     const [inputText, setInputText] = useState('');
@@ -27,9 +31,12 @@ const ChatSlugScreen = () => {
 
     const [chatLog, setChatLog] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [idMessage, setIdMessage] = useState<string>("");
 
     const [token, setToken] = useState<string>('');
     const [imageUri, setImageUri] = useState(null);
+    const folderData = useRecoilValue(FolderState).data
 
     const route = useRoute();
     const { chatId, receiverId, name } = route.params;
@@ -50,6 +57,7 @@ const ChatSlugScreen = () => {
     const stompClientRef = useRef<Client | null>(null);
 
 
+    console.log("folderData", folderData);
 
     const GetMyChatLogAsync = async () => {
         if (chatId) {
@@ -67,48 +75,13 @@ const ChatSlugScreen = () => {
             }
         }
     };
+    console.log("chatLog", chatLog);
 
     const scrollToBottom = () => {
         setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
     };
-
-    // useEffect(() => {
-    //     const baseURL = 'http://192.168.100.79:8080';
-    //     const wsUrl = `${baseURL.replace('http', 'ws')}/ws?token=${token}`;
-
-    //     const client = new Client({
-    //         brokerURL: wsUrl,
-    //         connectHeaders: {
-    //             Authorization: `Bearer ${token}`,
-    //         },
-    //         debug: (str) => {
-    //             console.log('🟣 STOMP Debug:', str);
-    //         },
-    //         reconnectDelay: 5000,
-    //         onConnect: (frame) => {
-    //             console.log('✅ STOMP connected:', frame);
-
-    //             // Lắng nghe thông điệp riêng
-    //             client.subscribe('/user/queue/chat', (message) => {
-    //                 console.log('📩 Nhận được message:', message.body);
-    //                 // Gọi lại các hàm cần reload
-    //                 GetMyChatLogAsync();
-    //             });
-    //         },
-    //         onStompError: (frame) => {
-    //             console.error('❌ STOMP error:', frame.headers['message']);
-    //         },
-    //     });
-
-    //     client.activate();
-    //     stompClientRef.current = client;
-
-    //     return () => {
-    //         client.deactivate();
-    //     };
-    // }, []);
 
     useEffect(() => {
         let isMounted = true; // Tránh memory leak khi component unmount
@@ -185,6 +158,12 @@ const ChatSlugScreen = () => {
         }
     };
 
+
+    const onOpenModal = (item: any) => {
+        setModalVisible(true)
+        setIdMessage(item.id)
+    }
+
     const renderItem = ({ item }: any) => {
         const isSender = item.sender == null ? false : true;
         return (
@@ -203,10 +182,24 @@ const ChatSlugScreen = () => {
                             resizeMode="cover"
                         />
                         :
-                        <Text style={styles.messageText}>{item.message}</Text>
-
+                        (
+                            item.aiChat
+                                ?
+                                <TouchableOpacity onPress={() => onOpenModal(item)}>
+                                    <Text style={styles.messageText}>{item.message}
+                                        <MaterialCommunityIcons
+                                            name="bookmark-outline"
+                                            size={20}
+                                            color="#fff"
+                                            style={{ margin: 0 }}
+                                        />
+                                    </Text>
+                                </TouchableOpacity>
+                                :
+                                <Text style={styles.messageText}>{item.message}</Text>
+                        )
                 }
-            </View>
+            </View >
         );
     };
 
@@ -231,6 +224,7 @@ const ChatSlugScreen = () => {
             }
         });
     };
+    console.log("chatLog", chatLog);
 
     return (
         <MainLayout
@@ -272,6 +266,13 @@ const ChatSlugScreen = () => {
                         </View>
                     </TouchableWithoutFeedback>
                 </KeyboardAvoidingView>
+                <ModalFolderPicker
+                    visible={modalVisible}
+                    folders={folderData}
+                    onClose={() => setModalVisible(false)}
+                    idMessage={idMessage}
+                    setLoading={setLoading}
+                />
             </View>
         </MainLayout>
     );
@@ -304,6 +305,7 @@ const styles = StyleSheet.create({
     },
     messageText: {
         color: '#fff',
+
     },
     inputContainer: {
         flexDirection: 'row',

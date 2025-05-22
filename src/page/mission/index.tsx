@@ -307,9 +307,13 @@ const MissionScreen = () => {
                 <View style={styles.container}>
                     <View style={styles.header}>
                         <Text style={styles.headerText}>Nhiệm vụ của trẻ</Text>
-                        <TouchableOpacity onPress={openSheet}>
-                            <Icon name={'plus-circle'} size={22} color="#4f3f97" />
-                        </TouchableOpacity>
+                        {
+                            dataProfile?.role === 'parent'
+                            &&
+                            <TouchableOpacity onPress={openSheet}>
+                                <Icon name={'plus-circle'} size={22} color="#4f3f97" />
+                            </TouchableOpacity>
+                        }
                     </View>
                     <FlatList
                         data={listMission}

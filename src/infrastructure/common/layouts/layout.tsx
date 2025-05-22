@@ -1,7 +1,9 @@
 import { useRecoilState } from 'recoil';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Alert,
+    AppState,
+    AppStateStatus,
     Image,
     Linking,
     StyleSheet,
@@ -22,6 +24,9 @@ import inspectorService from '../../repositories/inspector/inspector.service';
 import { PermissionsAndroid, Platform } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import { LocationState } from '../../../core/atoms/location/locationState';
+import DeviceInfo from 'react-native-device-info';
+import { FolderState } from '../../../core/atoms/folder/folderState';
+import folderService from '../../repositories/folder/folder.service';
 
 const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) => {
     const [token, setToken] = useState<string>('');
@@ -31,6 +36,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
     const [, setDataChildren] = useRecoilState(ChildState);
     const [listInspector, setListInspector] = useState<any[]>([])
     const [, setPosition] = useRecoilState(LocationState);
+    const [, setFolder] = useRecoilState(FolderState);
 
     const navigation = useNavigation<any>();
 
@@ -49,19 +55,78 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         }
     };
 
+
+    const onShareLocationAsync = async (latitude: number, longitude: number) => {
+        try {
+            await userService.shareLocation(
+                {
+                    "latitude": latitude,
+                    "longitude": longitude
+                },
+                () => { }
+            ).then(() => { });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const watchId = useRef<number | null>(null);
+    const appState = useRef(AppState.currentState);
+    const lastSentTime = useRef<number>(0);
+
     useEffect(() => {
-        Geolocation.getCurrentPosition(
-            (position) => {
-                setPosition({
-                    data: position
-                })
-            },
-            (error) => {
-                console.log(error);
-            },
-            // { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
-        );
-    }, [])
+        const startTracking = () => {
+            if (watchId.current === null) {
+                watchId.current = Geolocation.watchPosition(
+                    position => {
+                        const { latitude, longitude } = position.coords;
+                        console.log('New location:', latitude, longitude);
+
+                        // Cập nhật vị trí vào state
+                        setPosition({ data: position });
+
+                        // Gửi lên server
+                        onShareLocationAsync(latitude, longitude);
+                    },
+                    error => console.log('Location error:', error),
+                    {
+                        enableHighAccuracy: true,
+                        distanceFilter: 10,       // cập nhật nếu di chuyển ≥ 1m
+                        interval: 10000,         // Android: tối đa mỗi 10s
+                        fastestInterval: 5000,   // Android: tối thiểu mỗi 5s
+                    }
+                );
+            }
+        };
+
+        const stopTracking = () => {
+            if (watchId.current !== null) {
+                Geolocation.clearWatch(watchId.current);
+                watchId.current = null;
+            }
+        };
+
+        const handleAppStateChange = (nextAppState: AppStateStatus) => {
+            if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+                startTracking();
+            } else if (nextAppState.match(/inactive|background/)) {
+                stopTracking();
+            }
+            appState.current = nextAppState;
+        };
+
+        // Start tracking on mount
+        startTracking();
+
+        // Subscribe to app state changes
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+        return () => {
+            subscription.remove();
+            stopTracking();
+        };
+    }, [setPosition,]);
+
 
     useEffect(() => {
         getTokenStoraged();
@@ -121,6 +186,25 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         GetMyInspectorAsync().then(() => { });
     }, []);
 
+    const fetchFolders = async () => {
+        try {
+            const response = await folderService.getFolder(
+                () => { }
+            );
+            if (response) {
+                setFolder({
+                    data: response
+                });
+            }
+        } catch (error) {
+            console.error('Fetch inspectors error:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchFolders();
+    }, []);
+
     const handleSosCall = async () => {
         if (listInspector.length === 0) {
             Alert.alert("Thông báo", "Không có người giám sát để gọi.");
@@ -137,7 +221,6 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         } catch (error) {
             console.error(error);
         }
-
     };
 
     const callNext = (index: number) => {
@@ -169,6 +252,28 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
             ]
         );
     };
+
+    const onSharePinAsync = async (level: number) => {
+        try {
+            await userService.sharePin(
+                {
+                    "level": level,
+                },
+                () => { }
+            ).then(() => { });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+    useEffect(() => {
+        const fetchBattery = async () => {
+            const level = await DeviceInfo.getBatteryLevel(); // trả về số từ 0 -> 1
+            onSharePinAsync(Math.round(level * 100));
+        };
+
+        fetchBattery();
+    }, []);
+
 
     return (
         <View style={styles.container}>

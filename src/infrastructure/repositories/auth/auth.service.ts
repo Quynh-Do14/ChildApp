@@ -79,6 +79,12 @@ class AuthService {
         setLoading(true)
         try {
             await fcmService.deleteToken();
+            await RequestService.
+                post(Endpoint.Auth.Logout,
+                    {}
+                ).then(response => {
+                    return response;
+                });
             clearStorage();
         } catch (error) {
             console.log(error);
@@ -88,8 +94,6 @@ class AuthService {
     }
 
     async register(data: any, setLoading: Function) {
-        console.log("data", data);
-
         setLoading(true)
         try {
             return await RequestService.

@@ -8,6 +8,7 @@ export class Endpoint {
         static ResetPassword = "/auth/reset-password"
         static ForgotPassword = "/auth/forgot-password"
         static ChangePassword = "/users/change-password"
+        static Logout = "/auth/logout"
 
     }
 
@@ -23,7 +24,6 @@ export class Endpoint {
         static Create = "/api/children"
         static Update = "/api/children"
         static Delete = "/api/children"
-
     }
     static Mission = class {
         static Get = "/missions/my-missions"
@@ -48,11 +48,21 @@ export class Endpoint {
         static SOS = "/notifications/sos"
         static Location = "/locations/add"
         static GetLocation = "/locations/family"
+        static Pin = "/locations/add"
+
     }
     static BlockWeb = class {
         static Get = "/blocked/all/web"
         static GetByChild = "/blocked/all/web/child"
         static Create = "/blocked/web/add"
         static Delete = "/blocked/app/delete"
+    }
+    static Folder = class {
+        static Get = "/folders/my-folders"
+        static GetById = "/folders"
+        static Create = "/folders/create"
+        static Save = "/folders/add-message"
+        static Update = "/folders/update"
+        static Delete = "folders/delete"
     }
 };

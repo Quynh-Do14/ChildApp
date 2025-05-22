@@ -17,6 +17,7 @@ import fcmService from './src/infrastructure/repositories/fcm/fcmService';
 import InAppNotification from './src/page/notification/InAppNotification';
 import ViewProfile from './src/page/profile/components/view';
 import ChangePasswordScreen from './src/page/Auth/changePassword';
+import RestoreSlugScreen from './src/page/chat/restoreSlug';
 
 const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
@@ -62,6 +63,8 @@ const StackNavigator = () => {
         <Stack.Screen name={"ResetPasswordScreen"} component={ResetPasswordScreen} />
         <Stack.Screen name={"ChangePasswordScreen"} component={ChangePasswordScreen} />
         <Stack.Screen name={"ChatSlugScreen"} component={ChatSlugScreen} />
+        <Stack.Screen name={"RestoreSlugScreen"} component={RestoreSlugScreen} />
+
       </Stack.Navigator>
     );
   };

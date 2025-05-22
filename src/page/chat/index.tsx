@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import MainLayout from '../../infrastructure/common/layouts/layout'
 import conversationService from '../../infrastructure/repositories/conversation/conversation.service';
 import userService from '../../infrastructure/repositories/user/user.service';
+import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
+import RestoreComponent from './restore';
 
 export const fakeConversations = [
     {
@@ -71,7 +73,7 @@ const ChatListScreen = ({ navigation }: any) => {
         const fetchDataWithDelay = async () => {
             await GetMyConversationAsync();
             if (isMounted) {
-                setTimeout(fetchDataWithDelay, 5000); // Đợi 5s sau khi API hoàn thành
+                // setTimeout(fetchDataWithDelay, 5000); // Đợi 5s sau khi API hoàn thành
             }
         };
 
@@ -136,10 +138,16 @@ const ChatListScreen = ({ navigation }: any) => {
             <View style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => setTab(1)}>
-                        <Text style={styles.headerText}>Danh sách trò chuyện</Text>
+                        <Text style={[
+                            styles.headerText,
+                            tab == 1 && styles.active
+                        ]}>Trò chuyện</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setTab(2)}>
-                        <Text style={styles.headerText}>Danh bạ</Text>
+                        <Text style={[
+                            styles.headerText,
+                            tab == 2 && styles.active
+                        ]}>Danh bạ</Text>
                     </TouchableOpacity>
                 </View>
                 {
@@ -152,6 +160,8 @@ const ChatListScreen = ({ navigation }: any) => {
                             contentContainerStyle={styles.listContainer}
                         />
                         :
+                        tab == 2
+                        &&
                         <FlatList
                             data={myChildren}
                             renderItem={renderItemUser}
@@ -160,6 +170,7 @@ const ChatListScreen = ({ navigation }: any) => {
                         />
                 }
             </View>
+            {/* <LoadingFullScreen loading={loading} /> */}
         </MainLayout>
 
     );
@@ -177,13 +188,21 @@ const styles = StyleSheet.create({
     header: {
         display: "flex",
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         alignItems: "center"
     },
     headerText: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#4f3f97',
+        padding: 6
+    },
+    active: {
+        borderRadius: 8,
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#fff',
+        backgroundColor: "#4f3f97",
     },
     listContainer: {
     },

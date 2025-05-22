@@ -141,13 +141,13 @@ const ProfileScreen = ({ navigation }: any) => {
                             <Text style={styles.menuLabel}>{it.label}</Text>
                         </TouchableOpacity>
                     ))}
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         onPress={onShareLocationAsync}
                         style={styles.menuItem}
                     >
                         <Ionicons name="location-sharp" size={18} color="#4f3f97" />
                         <Text style={styles.menuLabel}>Chia sẻ vị trí</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                     {/* Đăng xuất */}
                     <TouchableOpacity onPress={onLogOut} style={[styles.menuItem, styles.logoutItem]}>
                         <Ionicons name="log-out-outline" size={18} color="#FF4D4D" />

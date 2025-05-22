@@ -127,6 +127,22 @@ class UserService {
             setLoading(false);
         }
     }
+    async sharePin(data: any, setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.
+                post(Endpoint.Notification.Pin,
+                    data
+                ).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
 }
 
 export default new UserService();
