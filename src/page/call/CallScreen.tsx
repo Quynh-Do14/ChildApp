@@ -88,30 +88,35 @@ const CallScreen = () => {
                 }
 
                 // Lắng nghe sự kiện
-                callService.engine?.addListener('onJoinChannelSuccess', (connection) => {
-                    console.log('JoinChannelSuccess', connection);
+                callService.engine?.addListener('onJoinChannelSuccess', (connection, uid) => {
+                    console.log('[CallScreen] JoinChannelSuccess', connection, uid);
                     setJoined(true);
                 });
 
-                callService.engine?.addListener('onUserJoined', (connection, uid) => {
-                    console.log('UserJoined', connection, uid);
+                callService.engine?.addListener('onUserJoined', (connection, uid, elapsed) => {
+                    console.log('[CallScreen] UserJoined', connection, uid, elapsed);
                     if (peerIds.indexOf(uid) === -1) {
                         setPeerIds(prev => [...prev, uid]);
                     }
                 });
 
-                callService.engine?.addListener('onUserOffline', (connection, uid) => {
-                    console.log('UserOffline', connection, uid);
+                callService.engine?.addListener('onUserOffline', (connection, uid, reason) => {
+                    console.log('[CallScreen] UserOffline', connection, uid, reason);
                     setPeerIds(prev => {
                         const updatedPeerIds = prev.filter(id => id !== uid);
-
+                        
                         // Nếu không còn người dùng khác, tự động kết thúc
                         if (updatedPeerIds.length <= 0) {
-                            endCall();
+                            setTimeout(() => endCall(), 1000); // Thêm một chút delay
                         }
-
+                        
                         return updatedPeerIds;
                     });
+                });
+
+                callService.engine?.addListener('onError', (err) => {
+                    console.error('[CallScreen] Agora Error:', err);
+                    Alert.alert('Lỗi kết nối', 'Có lỗi xảy ra trong quá trình kết nối');
                 });
             } catch (error) {
                 console.error('Error setting up call:', error);

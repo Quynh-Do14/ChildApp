@@ -29,14 +29,41 @@ class CallService {
 
     async init() {
         try {
-            // Đảm bảo đã xin quyền
             await this.requestPermissions();
 
-            // Khởi tạo engine theo cách làm của Agora-RN-Quickstart
+            if (this.engine) {
+                console.log('Engine đã tồn tại, không khởi tạo lại');
+                return true;
+            }
+
+            console.log('Khởi tạo Agora engine với AppID:', this.appId);
             this.engine = createAgoraRtcEngine();
-            await this.engine.initialize({ appId: this.appId });
-            await this.engine.enableAudio();
+
+            // Kiểm tra khởi tạo thành công
+            if (!this.engine) {
+                console.error('Không thể khởi tạo Agora engine');
+                return false;
+            }
+
+            // Thiết lập cấu hình
+            const options = {
+                appId: this.appId,
+                channelProfile: 0, // ChannelProfileLiveBroadcasting
+                audioScenario: 0, // AudioScenarioDefault
+                areaCode: 0xFFFFFFFF // Tất cả khu vực
+            };
+
+            // Khởi tạo engine
+            await this.engine.initialize(options);
             console.log('Agora engine initialized successfully');
+
+            // Bật âm thanh
+            await this.engine.enableAudio();
+            console.log('Audio enabled');
+
+            // Thiết lập loại âm thanh
+            await this.engine.setClientRole(1); // Broadcaster role
+
             return true;
         } catch (error) {
             console.error('Error initializing Agora engine:', error);
@@ -53,7 +80,7 @@ class CallService {
 
             try {
                 console.log('Khởi tạo cuộc gọi với receiverId:', receiverId);
-                
+
                 // In ra endpoint đầy đủ để debug
                 console.log('URL:', Endpoint.Call.InitiateCall);
 
@@ -75,7 +102,7 @@ class CallService {
                 console.log('API phản hồi thành công');
                 const data = await response.json();
                 console.log('Data từ API:', JSON.stringify(data));
-                
+
                 const { channelName, token } = data;
 
                 // Khởi tạo engine nếu chưa
@@ -100,13 +127,13 @@ class CallService {
             }
         } catch (error: any) {
             console.error('Error starting call:', error);
-            
+
             // Cải thiện thông báo lỗi
             let errorMessage = 'Không thể bắt đầu cuộc gọi';
             if (error.message?.includes('Network request failed')) {
                 errorMessage = 'Không thể kết nối tới server. Kiểm tra kết nối mạng của bạn.';
             }
-            
+
             return {
                 success: false,
                 error: errorMessage
@@ -121,16 +148,15 @@ class CallService {
             console.log('User token:', userToken ? 'Có token' : 'Không có token');
             if (!userToken) return { success: false, error: 'Lỗi xác thực' };
 
-            // Lấy Agora token trực tiếp từ API get-token thay vì join
-            // (Tạm thời để debug)
             try {
                 console.log('Đang lấy token từ API...');
                 console.log('Channel name:', channelName);
-                
-                // In ra endpoint đầy đủ để debug
-                console.log('URL:', `${Endpoint.Call.GetToken}?channelName=${channelName}`);
 
-                const response = await fetch(`${Endpoint.Call.GetToken}?channelName=${channelName}`, {
+                // URL đầy đủ với domain
+                const url = `${Endpoint.Call.GetToken}?channelName=${channelName}`;
+                console.log('URL đầy đủ:', url);
+
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${userToken}`,
@@ -148,7 +174,7 @@ class CallService {
                 console.log('API phản hồi thành công');
                 const data = await response.json();
                 console.log('Data từ API:', JSON.stringify(data));
-                
+
                 // Lấy token từ response thành công
                 const token = data.token;
 
@@ -163,9 +189,12 @@ class CallService {
                     throw new Error('Engine không được khởi tạo');
                 }
 
-                // ĐỒng nhất với cách gọi trong Agora-RN-Quickstart
-                console.log('Tham gia kênh với token: ', token ? token.substr(0, 20) + '...' : 'undefined');
-                await this.engine.joinChannel(token, channelName,0, {});
+                // Xóa tất cả event listeners trước khi thiết lập lại
+                this.engine.removeAllListeners();
+
+                // Tham gia kênh
+                console.log('Tham gia kênh với token:', token ? token.substr(0, 20) + '...' : 'undefined');
+                await this.engine.joinChannel(token, channelName, 0, {});
                 console.log('Tham gia kênh thành công');
 
                 return {
@@ -175,17 +204,17 @@ class CallService {
                 };
             } catch (apiError) {
                 console.error('API error detail:', apiError);
-                throw apiError; // Chuyển tiếp lỗi để xử lý ở catch ngoài
+                throw apiError;
             }
         } catch (error: any) {
             console.error('Error joining call:', error);
-            
+
             // Cải thiện thông báo lỗi
             let errorMessage = 'Không thể tham gia cuộc gọi';
             if (error.message?.includes('Network request failed')) {
                 errorMessage = 'Không thể kết nối tới server. Kiểm tra kết nối mạng của bạn.';
             }
-            
+
             return {
                 success: false,
                 error: errorMessage
@@ -242,7 +271,7 @@ class CallService {
                 console.log('Khởi tạo Agora engine...');
                 await this.init();
             }
-            
+
             // 2. Thiết lập các sự kiện TRƯỚC KHI join channel
             this.engine?.addListener('onJoinChannelSuccess', (connection, uid) => {
                 console.log('Successfully joined channel', connection.channelId, 'with uid', uid);
@@ -251,7 +280,7 @@ class CallService {
             this.engine?.addListener('onError', (err) => {
                 console.error('Agora error:', err);
             });
-            
+
             // 3. Thử join channel với token rỗng (như Agora-RN-Quickstart)
             console.log('Thử tham gia kênh trực tiếp với token rỗng...');
             try {
