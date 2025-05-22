@@ -117,6 +117,7 @@ const CallScreen = () => {
                 console.error('Error setting up call:', error);
                 Alert.alert('Lỗi', 'Có lỗi xảy ra khi thiết lập cuộc gọi');
                 navigation.goBack();
+                setTimeout(() => navigation.goBack(), 10);
             }
         };
 

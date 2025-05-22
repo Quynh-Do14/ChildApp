@@ -1,5 +1,5 @@
 export class Endpoint {
-    static API_BASE = "https://5d6e-171-224-178-140.ngrok-free.app";
+    static API_BASE = "https://c610-58-187-54-205.ngrok-free.app";
 
     static Auth = class {
         static Login = "/auth/login"
