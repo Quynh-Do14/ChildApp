@@ -72,7 +72,7 @@ const CallScreen = () => {
         const setupCall = async () => {
             try {
                 console.log('[CallScreen] Setting up call, channelId:', channelId);
-
+                
                 // Khởi tạo engine
                 const initialized = await callService.init();
                 if (!initialized) {
@@ -81,42 +81,31 @@ const CallScreen = () => {
                     navigation.goBack();
                     return;
                 }
-
+                
                 console.log('[CallScreen] Engine initialized successfully');
-
-                // Tham gia kênh
-                const result = await callService.joinCall(channelId);
-                if (!result.success) {
-                    console.error('[CallScreen] Join call error:', result.error);
-                    Alert.alert('Lỗi', result.error || 'Không thể tham gia cuộc gọi');
-                    navigation.goBack();
-                    return;
-                }
-
-                console.log('[CallScreen] Joined call successfully, setting up listeners');
-
-                // Lắng nghe sự kiện - đảm bảo xóa listeners trước khi thiết lập
+                
+                // QUAN TRỌNG: Thiết lập listeners TRƯỚC KHI tham gia kênh
                 if (callService.engine) {
                     callService.engine.removeAllListeners();
-
-                    callService.engine.addListener('onJoinChannelSuccess', (connection, uid) => {
-                        console.log('[CallScreen] JoinChannelSuccess', connection, uid);
+                    
+                    // Sử dụng cú pháp giống hệt Quickstart
+                    callService.engine.addListener('onJoinChannelSuccess', connection => {
+                        console.log('[CallScreen] JoinChannelSuccess', connection);
                         setJoined(true);
                     });
-
-                    callService.engine.addListener('onUserJoined', (connection, uid, elapsed) => {
-                        console.log('[CallScreen] UserJoined', uid);
+                    
+                    callService.engine.addListener('onUserJoined', (connection, uid) => {
+                        console.log('[CallScreen] UserJoined', connection, uid);
                         setPeerIds(prev => {
                             if (prev.indexOf(uid) === -1) {
-                                console.log('[CallScreen] Adding new peer', uid);
                                 return [...prev, uid];
                             }
                             return prev;
                         });
                     });
-
-                    callService.engine.addListener('onUserOffline', (connection, uid, reason) => {
-                        console.log('[CallScreen] UserOffline', uid, reason);
+                    
+                    callService.engine.addListener('onUserOffline', (connection, uid) => {
+                        console.log('[CallScreen] UserOffline', connection, uid);
                         setPeerIds(prev => {
                             const updatedPeerIds = prev.filter(id => id !== uid);
                             console.log('[CallScreen] Updated peerIds after user left:', updatedPeerIds);
@@ -138,6 +127,16 @@ const CallScreen = () => {
 
                     console.log('[CallScreen] All listeners set up successfully');
                 }
+                
+                // Sau đó mới tham gia kênh
+                const result = await callService.joinCall(channelId);
+                if (!result.success) {
+                    console.error('[CallScreen] Join call error:', result.error);
+                    Alert.alert('Lỗi', result.error || 'Không thể tham gia cuộc gọi');
+                    navigation.goBack();
+                    return;
+                }
+                
             } catch (error) {
                 console.error('Error setting up call:', error);
                 Alert.alert('Lỗi', 'Có lỗi xảy ra khi thiết lập cuộc gọi');

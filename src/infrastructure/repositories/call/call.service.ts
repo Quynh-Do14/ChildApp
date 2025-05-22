@@ -190,7 +190,7 @@ class CallService {
                 }
 
                 // Xóa tất cả event listeners trước khi thiết lập lại
-                this.engine.removeAllListeners();
+                // this.engine.removeAllListeners();
 
                 // Tham gia kênh
                 console.log('Tham gia kênh với token:', token ? token.substr(0, 20) + '...' : 'undefined');
