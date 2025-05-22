@@ -15,11 +15,12 @@ class CallService {
             if (Platform.OS === 'android') {
                 const granted = await PermissionsAndroid.requestMultiple([
                     PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+                    PermissionsAndroid.PERMISSIONS.CAMERA, // Thêm quyền camera
                 ]);
-                return granted['android.permission.RECORD_AUDIO'] === 'granted';
+                return granted['android.permission.RECORD_AUDIO'] === 'granted' && granted['android.permission.CAMERA'] === 'granted';
             } else {
-                const result = await requestMultiple([PERMISSIONS.IOS.MICROPHONE]);
-                return result[PERMISSIONS.IOS.MICROPHONE] === 'granted';
+                const result = await requestMultiple([PERMISSIONS.IOS.MICROPHONE, PERMISSIONS.IOS.CAMERA]);
+                return result[PERMISSIONS.IOS.MICROPHONE] === 'granted' && result[PERMISSIONS.IOS.CAMERA] === 'granted';
             }
         } catch (err) {
             console.error('Permission request error:', err);
@@ -29,41 +30,35 @@ class CallService {
 
     async init() {
         try {
+            // Yêu cầu quyền microphone VÀ camera
             await this.requestPermissions();
-
-            if (this.engine) {
-                console.log('Engine đã tồn tại, không khởi tạo lại');
-                return true;
-            }
-
-            console.log('Khởi tạo Agora engine với AppID:', this.appId);
-            this.engine = createAgoraRtcEngine();
-
-            // Kiểm tra khởi tạo thành công
+            
+            // Tạo engine nếu chưa có
             if (!this.engine) {
-                console.error('Không thể khởi tạo Agora engine');
-                return false;
+                this.engine = createAgoraRtcEngine();
+                
+                await this.engine.initialize({
+                    appId: this.appId,
+                    // Thêm các thiết lập video cần thiết
+                    // Ví dụ: frameRate, dimensions
+                });
+                
+                // Bật âm thanh
+                await this.engine.enableAudio();
+                
+                // Bật video
+                await this.engine.enableVideo();
+                
+                // Thiết lập cấu hình video
+                await this.engine.setVideoEncoderConfiguration({
+                    dimensions: {
+                        width: 640,
+                        height: 360
+                    },
+                    frameRate: 15,
+                    bitrate: 800
+                });
             }
-
-            // Thiết lập cấu hình
-            const options = {
-                appId: this.appId,
-                channelProfile: 0, // ChannelProfileLiveBroadcasting
-                audioScenario: 0, // AudioScenarioDefault
-                areaCode: 0xFFFFFFFF // Tất cả khu vực
-            };
-
-            // Khởi tạo engine
-            await this.engine.initialize(options);
-            console.log('Agora engine initialized successfully');
-
-            // Bật âm thanh
-            await this.engine.enableAudio();
-            console.log('Audio enabled');
-
-            // Thiết lập loại âm thanh
-            await this.engine.setClientRole(1); // Broadcaster role
-
             return true;
         } catch (error) {
             console.error('Error initializing Agora engine:', error);

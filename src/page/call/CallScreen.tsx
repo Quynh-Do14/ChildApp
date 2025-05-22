@@ -1,16 +1,17 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-    View,
-    TouchableOpacity,
-    Text,
-    StyleSheet,
-    SafeAreaView,
-    Platform,
-    Alert,
+    View, TouchableOpacity, Text, StyleSheet, 
+    SafeAreaView, Platform, Alert, Dimensions
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import callService from '../../infrastructure/repositories/call/call.service';
+// Import RtcLocalView và RtcRemoteView
+import {
+    RtcLocalView,
+    RtcRemoteView,
+    VideoRenderMode,
+} from 'react-native-agora';
 
 type CallScreenParams = {
     channelId: string;
@@ -29,6 +30,10 @@ const CallScreen = () => {
     const [peerIds, setPeerIds] = useState<number[]>([]);
     const [callDuration, setCallDuration] = useState(0);
 
+    // Thêm state để quản lý camera và mic
+    const [isCameraOn, setCameraOn] = useState(true);
+    const [isMicOn, setMicOn] = useState(true);
+    
     // Timer để đếm thời gian cuộc gọi
     useEffect(() => {
         let timer: NodeJS.Timeout | null = null;
@@ -155,63 +160,142 @@ const CallScreen = () => {
         };
     }, [channelId, navigation, endCall, isJoined]);
 
+    // Chức năng bật/tắt camera
+    const toggleCamera = () => {
+        callService.engine?.muteLocalVideoStream(isCameraOn);
+        setCameraOn(!isCameraOn);
+    };
+    
+    // Chức năng bật/tắt mic
+    const toggleMic = () => {
+        callService.engine?.muteLocalAudioStream(isMicOn);
+        setMicOn(!isMicOn);
+    };
+
+    // Cập nhật giao diện để hiển thị video
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.name}>{recipientName}</Text>
-                <Text style={styles.status}>
-                    {!isJoined ? 'Đang kết nối...' : formatTime(callDuration)}
-                </Text>
-
-                {/* Hiển thị trạng thái người tham gia */}
-                <Text style={styles.participants}>
-                    {peerIds.length > 0 ? `${peerIds.length} người tham gia` : 'Đang đợi...'}
-                </Text>
+            {/* Hiển thị video của người dùng từ xa */}
+            {peerIds.length > 0 ? (
+                <View style={styles.remoteVideoContainer}>
+                    {peerIds.map(uid => (
+                        <RtcRemoteView.SurfaceView
+                            key={uid}
+                            style={styles.remoteVideo}
+                            uid={uid}
+                            channelId={channelId}
+                            renderMode={VideoRenderMode.Hidden}
+                            zOrderMediaOverlay={true}
+                        />
+                    ))}
+                </View>
+            ) : (
+                <View style={styles.waitingContainer}>
+                    <Text style={styles.waitingText}>
+                        {isJoined ? 'Đang đợi người dùng khác...' : 'Đang kết nối...'}
+                    </Text>
+                </View>
+            )}
+            
+            {/* Hiển thị video của người dùng hiện tại (local) */}
+            <View style={styles.localVideoContainer}>
+                <RtcLocalView.SurfaceView
+                    style={styles.localVideo}
+                    channelId={channelId}
+                    renderMode={VideoRenderMode.Hidden}
+                    zOrderMediaOverlay={true}
+                />
             </View>
-
-            <View style={styles.spacer} />
-
-            <TouchableOpacity style={styles.endCallButton} onPress={endCall}>
-                <Icon name="call-end" size={30} color="#fff" />
-            </TouchableOpacity>
+            
+            {/* Phần điều khiển */}
+            <View style={styles.controls}>
+                {/* Nút bật/tắt mic */}
+                <TouchableOpacity 
+                    style={[styles.controlButton, !isMicOn && styles.controlButtonOff]}
+                    onPress={toggleMic}
+                >
+                    <Icon name={isMicOn ? "mic" : "mic-off"} size={24} color="#fff" />
+                </TouchableOpacity>
+                
+                {/* Nút kết thúc cuộc gọi */}
+                <TouchableOpacity style={styles.endCallButton} onPress={endCall}>
+                    <Icon name="call-end" size={30} color="#fff" />
+                </TouchableOpacity>
+                
+                {/* Nút bật/tắt camera */}
+                <TouchableOpacity 
+                    style={[styles.controlButton, !isCameraOn && styles.controlButtonOff]}
+                    onPress={toggleCamera}
+                >
+                    <Icon name={isCameraOn ? "videocam" : "videocam-off"} size={24} color="#fff" />
+                </TouchableOpacity>
+            </View>
         </SafeAreaView>
     );
 };
 
+// Cập nhật styles
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#1c1c1c',
-        paddingTop: Platform.OS === 'android' ? 25 : 0,
     },
-    header: {
-        alignItems: 'center',
-        marginTop: 60,
-    },
-    name: {
-        color: '#fff',
-        fontSize: 28,
-        fontWeight: 'bold',
-    },
-    status: {
-        color: '#aaa',
-        fontSize: 16,
-        marginTop: 8,
-    },
-    participants: {
-        color: '#aaa',
-        fontSize: 14,
-        marginTop: 4,
-    },
-    spacer: {
+    remoteVideoContainer: {
         flex: 1,
     },
+    remoteVideo: {
+        flex: 1,
+    },
+    localVideoContainer: {
+        position: 'absolute',
+        top: 50,
+        right: 20,
+        width: 120,
+        height: 160,
+        borderRadius: 8,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#ffffff',
+    },
+    localVideo: {
+        flex: 1,
+    },
+    waitingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    waitingText: {
+        color: 'white',
+        fontSize: 18,
+    },
+    controls: {
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignItems: 'center',
+        position: 'absolute',
+        bottom: 30,
+        left: 0,
+        right: 0,
+    },
+    controlButton: {
+        backgroundColor: 'rgba(100, 100, 100, 0.5)',
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    controlButtonOff: {
+        backgroundColor: 'rgba(200, 50, 50, 0.5)',
+    },
     endCallButton: {
-        alignSelf: 'center',
         backgroundColor: '#ff3b30',
+        width: 60,
+        height: 60,
         borderRadius: 30,
-        padding: 15,
-        marginBottom: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 
