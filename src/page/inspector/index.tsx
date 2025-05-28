@@ -103,8 +103,6 @@ const InspectorScreen = () => {
     }, []);
 
     const openSheet = (inspector?: Inspector) => {
-        console.log("inspector", inspector);
-
         if (inspector) {
             setEditingId(inspector.id);
             setDataRequest({

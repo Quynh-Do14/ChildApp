@@ -75,7 +75,6 @@ const ChatSlugScreen = () => {
             }
         }
     };
-    console.log("chatLog", chatLog);
 
     const scrollToBottom = () => {
         setTimeout(() => {

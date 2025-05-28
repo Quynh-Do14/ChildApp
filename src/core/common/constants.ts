@@ -90,19 +90,19 @@ export default class Constants {
                 value: "ViewProfile",
                 label: "Thông tin",
                 icon: "person-sharp",
-                roles: ["admin", "parent", "children"]
+                roles: ["admin", "parent", "child"]
             },
             {
                 value: "EditProfile",
                 label: "Chỉnh sửa hồ sơ",
                 icon: "settings-sharp",
-                roles: ["admin", "parent",]
+                roles: ["admin", "parent"]
             },
             {
                 value: "ChangePasswordScreen",
                 label: "Đổi mật khẩu",
                 icon: "keypad",
-                roles: ["admin", "parent", "children"]
+                roles: ["admin", "parent"]
             },
         ]
     }

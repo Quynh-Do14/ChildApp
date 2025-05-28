@@ -104,6 +104,7 @@ const ProfileScreen = ({ navigation }: any) => {
             getProfileUser();
         }
     }, [isFocused]);
+
     return (
         <MainLayout title={'Trang cá nhân'}>
             <View style={styles.container}>
@@ -131,16 +132,20 @@ const ProfileScreen = ({ navigation }: any) => {
 
                 {/* Menu các dòng chọn */}
                 <View style={styles.menuList}>
-                    {Constants.InfoUser.List.map((it, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            onPress={() => navigateEditProfile(it.value)}
-                            style={styles.menuItem}
-                        >
-                            <Ionicons name={it.icon} size={18} color="#4f3f97" />
-                            <Text style={styles.menuLabel}>{it.label}</Text>
-                        </TouchableOpacity>
-                    ))}
+                    {Constants.InfoUser.List.map((it, index) => {
+                        if (it.roles.includes(dataProfile.data.role)) {
+                            return (
+                                <TouchableOpacity
+                                    key={index}
+                                    onPress={() => navigateEditProfile(it.value)}
+                                    style={styles.menuItem}
+                                >
+                                    <Ionicons name={it.icon} size={18} color="#4f3f97" />
+                                    <Text style={styles.menuLabel}>{it.label}</Text>
+                                </TouchableOpacity>
+                            )
+                        }
+                    })}
                     {/* <TouchableOpacity
                         onPress={onShareLocationAsync}
                         style={styles.menuItem}

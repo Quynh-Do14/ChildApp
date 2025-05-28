@@ -24,7 +24,6 @@ type ChildFormData = {
     phoneNumber: string;
 };
 
-
 const ChildrenScreen = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [_data, _setData] = useState<any>({});
@@ -44,7 +43,6 @@ const ChildrenScreen = () => {
     // Refs and constants
     const bottomSheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ['90%'], []);
-    console.log("childrenList", childrenList);
 
     const isValidData = () => {
         let allRequestOK = true;

@@ -124,6 +124,21 @@ export const getCurrentDateTimeISO = (originalDate: any) => {
     return formattedDateString
 }
 
+export function convertUtcToVietnamTime(utcInput: any) {
+    let date;
+
+    // Parse đầu vào thành đối tượng Date
+    if (typeof utcInput === 'string' || typeof utcInput === 'number') {
+        date = new Date(utcInput);
+    } else if (utcInput instanceof Date) {
+        date = utcInput;
+    } else {
+        throw new Error('Giá trị đầu vào không hợp lệ. Phải là Date, chuỗi, hoặc số.');
+    }
+    // Cộng thêm 7 giờ (7 * 60 * 60 * 1000 ms)
+    const vietnamDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+    return vietnamDate.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+}
 
 export const timeToMilliseconds = (timeString: string) => {
     const [hours, minutes, seconds] = timeString.split(':').map(Number);

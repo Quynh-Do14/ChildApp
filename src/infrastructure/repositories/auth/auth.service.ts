@@ -193,7 +193,7 @@ class AuthService {
     async changePassword(data: any, setLoading: Function) {
         setLoading(true)
         try {
-            return await RequestService.post(`${Endpoint.Auth.ChangePassword}`,
+            return await RequestService.put(`${Endpoint.Auth.ChangePassword}`,
                 data
             ).then(response => {
                 Alert.alert(`Đổi mật khẩu thành công`);

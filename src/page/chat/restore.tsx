@@ -9,8 +9,6 @@ import InputTextCommon from '../../infrastructure/common/components/input/input-
 import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
 import MainLayout from '../../infrastructure/common/layouts/layout';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useRecoilValue } from 'recoil';
-import { FolderState } from '../../core/atoms/folder/folderState';
 
 const RestoreScreen = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
