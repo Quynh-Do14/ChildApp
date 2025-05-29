@@ -206,10 +206,10 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
     }, []);
 
     const handleSosCall = async () => {
-        if (listInspector.length === 0) {
-            Alert.alert("Thông báo", "Không có người giám sát để gọi.");
-            return;
-        }
+        // if (listInspector.length === 0) {
+        //     Alert.alert("Thông báo", "Không có người giám sát để gọi.");
+        //     return;
+        // }
         callNext(0)
         try {
             await userService.notificationSOS(

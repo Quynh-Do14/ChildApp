@@ -1,39 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Alert, BackHandler, View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
 import MainLayout from '../../infrastructure/common/layouts/layout';
-import { Alert, Button, TextInput, View } from 'react-native';
 import blockService from '../../infrastructure/repositories/block/block.service';
-import { useIsFocused } from '@react-navigation/native';
 
 const WebiewScreen = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [refreshing, setRefreshing] = useState<boolean>(false);
-    const [browserList, setBrowerList] = useState<string[]>([]);
-    const currentUrl = "https://www.google.com";
+    const [browserList, setBrowserList] = useState<string[]>([]);
+    const [canGoBack, setCanGoBack] = useState(false);
+    const webViewRef = useRef<WebView>(null);
     const isFocused = useIsFocused();
+    const currentUrl = 'https://www.google.com';
 
-    const fetchWeb = async (loadingState: boolean = true) => {
+    const fetchBlockedWebsites = async (loadingState: boolean = true) => {
         try {
             const response = await blockService.getByChild(
                 loadingState ? setLoading : setRefreshing
             );
             if (response) {
-                setBrowerList(response?.map((item: any) => item.appName));
+                const list = response.map((item: any) => item.appName.toLowerCase());
+                setBrowserList(list);
             }
         } catch (error) {
-            Alert.alert('Lỗi', 'Không thể tải danh sách trẻ');
-            console.error('Fetch children error:', error);
+            Alert.alert('Lỗi', 'Không thể tải danh sách web bị chặn');
+            console.error('Fetch blocked websites error:', error);
         }
     };
 
-    // Effects
     useEffect(() => {
-        fetchWeb();
+        fetchBlockedWebsites();
     }, []);
 
     useEffect(() => {
         if (isFocused) {
-            fetchWeb();
+            fetchBlockedWebsites();
         }
     }, [isFocused]);
 
@@ -41,13 +43,32 @@ const WebiewScreen = () => {
         return browserList.some((blocked) => url.includes(blocked));
     };
 
+    useFocusEffect(
+        useCallback(() => {
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+                if (canGoBack && webViewRef.current) {
+                    webViewRef.current.goBack();
+                    return true;
+                }
+                return false;
+            });
+
+            return () => backHandler.remove();
+        }, [canGoBack])
+    );
+    const handleNavigationStateChange = (navState: any) => {
+        setCanGoBack(navState.canGoBack);
+    };
+
     return (
         <MainLayout title={'Trình duyệt'}>
             <View style={{ flex: 1 }}>
                 <WebView
+                    ref={webViewRef}
                     source={{ uri: currentUrl }}
                     originWhitelist={['*']}
                     style={{ flex: 1 }}
+                    onNavigationStateChange={handleNavigationStateChange}
                     onShouldStartLoadWithRequest={(request) => {
                         const isBlocked = isBlockedUrl(request.url);
                         if (isBlocked) {

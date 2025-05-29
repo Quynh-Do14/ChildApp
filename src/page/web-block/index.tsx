@@ -68,23 +68,6 @@ const WebBLockScreen = () => {
         fetchWeb();
     }, []);
 
-    const handleRefresh = () => {
-        fetchWeb(false);
-    };
-
-
-
-    // Bottom sheet handlers
-    const handleSheetChanges = useCallback((index: number) => {
-        if (index === -1) {
-            setEditingId(null);
-            setDataRequest({
-                appName: '',
-                childId: '',
-            });
-        }
-    }, []);
-
     const openSheet = (child?: any) => {
         if (child) {
             setDataRequest({
