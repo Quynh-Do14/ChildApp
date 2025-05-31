@@ -6,7 +6,8 @@ class UserService {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.User.MyChild, params
+                get(Endpoint.User.MyChild,
+                    { ...params }
                 ).then(response => {
                     return response;
                 });

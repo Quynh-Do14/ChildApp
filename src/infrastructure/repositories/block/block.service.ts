@@ -6,7 +6,8 @@ class BlockService {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.BlockWeb.Get, params
+                get(Endpoint.BlockWeb.Get,
+                    { ...params }
                 ).then(response => {
                     return response;
                 });

@@ -6,7 +6,8 @@ class InspectorService {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.Inspector.Get, params
+                get(Endpoint.Inspector.Get,
+                    { ...params }
                 ).then(response => {
                     return response;
                 });

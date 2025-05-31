@@ -7,7 +7,8 @@ class MissionService {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.Mission.Get, params
+                get(Endpoint.Mission.Get,
+                    { ...params }
                 ).then(response => {
                     return response;
                 });

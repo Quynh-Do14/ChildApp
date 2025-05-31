@@ -147,6 +147,9 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
     const GetMyChildrenAsync = async () => {
         try {
             await userService.getChild(
+                {
+                    size: 1000
+                },
                 () => { },
             ).then((response) => {
                 if (response) {
@@ -177,6 +180,9 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
     const GetMyInspectorAsync = async () => {
         try {
             await inspectorService.getInspector(
+                {
+                    size: 1000
+                },
                 () => { },
             ).then((response) => {
                 if (response) {
@@ -283,7 +289,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         // // Thiết lập interval mỗi 5 phút
         const interval = setInterval(() => {
             fetchBattery();
-        }, 5 * 60 * 1000); // 5 phút = 300000ms
+        }, 1 * 60 * 1000); // 5 phút = 300000ms
 
         // Clear interval khi unmount
         return () => clearInterval(interval);
