@@ -52,6 +52,9 @@ const WebBLockScreen = () => {
     const fetchWeb = async (loadingState: boolean = true) => {
         try {
             const response = await blockService.getAll(
+                {
+                    size: 1000
+                },
                 loadingState ? setLoading : setRefreshing
             );
             if (response) {

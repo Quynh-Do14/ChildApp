@@ -3,11 +3,11 @@ import { Endpoint } from "../../../core/common/apiLink";
 import { RequestService } from "../../utils/response";
 
 class MissionService {
-    async getMission(setLoading: Function) {
+    async getMission(params: any, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.Mission.Get,
+                get(Endpoint.Mission.Get, params
                 ).then(response => {
                     return response;
                 });

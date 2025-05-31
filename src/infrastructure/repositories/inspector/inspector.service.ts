@@ -2,11 +2,11 @@ import { Endpoint } from "../../../core/common/apiLink";
 import { RequestService } from "../../utils/response";
 
 class InspectorService {
-    async getInspector(setLoading: Function) {
+    async getInspector(params: any, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.Inspector.Get,
+                get(Endpoint.Inspector.Get, params
                 ).then(response => {
                     return response;
                 });

@@ -2,11 +2,11 @@ import { Endpoint } from "../../../core/common/apiLink";
 import { RequestService } from "../../utils/response";
 
 class BlockService {
-    async getAll(setLoading: Function) {
+    async getAll(params: any, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.BlockWeb.Get,
+                get(Endpoint.BlockWeb.Get, params
                 ).then(response => {
                     return response;
                 });

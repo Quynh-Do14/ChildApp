@@ -2,11 +2,11 @@ import { Endpoint } from "../../../core/common/apiLink";
 import { RequestService } from "../../utils/response";
 
 class UserService {
-    async getChild(setLoading: Function) {
+    async getChild(params: any, setLoading: Function) {
         setLoading(true)
         try {
             return await RequestService.
-                get(Endpoint.User.MyChild,
+                get(Endpoint.User.MyChild, params
                 ).then(response => {
                     return response;
                 });

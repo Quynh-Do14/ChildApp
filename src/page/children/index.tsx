@@ -59,6 +59,9 @@ const ChildrenScreen = () => {
     const fetchChildren = async (loadingState: boolean = true) => {
         try {
             const response = await userService.getChild(
+                {
+                    size: 1000
+                },
                 loadingState ? setLoading : setRefreshing
             );
             if (response) {

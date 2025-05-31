@@ -76,6 +76,9 @@ const InspectorScreen = () => {
     const fetchInspectors = async (loadingState: boolean = true) => {
         try {
             const response = await inspectorService.getInspector(
+                {
+                    size: 1000
+                },
                 loadingState ? setLoading : setRefreshing
             );
             if (response) {

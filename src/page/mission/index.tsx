@@ -86,7 +86,11 @@ const MissionScreen = () => {
     // Data fetching
     const fetchMissions = async (loadingState: boolean = true) => {
         try {
-            const response = await missionService.getMission(loadingState ? setLoading : setRefreshing);
+            const response = await missionService.getMission(
+                {
+                    size: 1000
+                },
+                loadingState ? setLoading : setRefreshing);
             if (response?.content) {
                 setListMission(response.content);
             }
