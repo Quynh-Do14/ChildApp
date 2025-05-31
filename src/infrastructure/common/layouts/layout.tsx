@@ -281,12 +281,12 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         fetchBattery();
 
         // // Thiết lập interval mỗi 5 phút
-        // const interval = setInterval(() => {
-        //     fetchBattery();
-        // }, 5 * 60 * 1000); // 5 phút = 300000ms
+        const interval = setInterval(() => {
+            fetchBattery();
+        }, 5 * 60 * 1000); // 5 phút = 300000ms
 
-        // // Clear interval khi unmount
-        // return () => clearInterval(interval);
+        // Clear interval khi unmount
+        return () => clearInterval(interval);
     }, []);
 
 
