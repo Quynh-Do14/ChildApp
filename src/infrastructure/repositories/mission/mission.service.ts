@@ -1,3 +1,4 @@
+import { Alert } from "react-native";
 import { Endpoint } from "../../../core/common/apiLink";
 import { RequestService } from "../../utils/response";
 
@@ -19,6 +20,8 @@ class MissionService {
     }
     async createMission(data: any, setLoading: Function) {
         setLoading(true)
+        console.log("data", data);
+
         try {
             return await RequestService.
                 post(Endpoint.Mission.Create,
@@ -27,8 +30,9 @@ class MissionService {
                     return response;
                 });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error)
+            Alert.alert(`Thêm mới không thành công`, error.response.data.message);
         } finally {
             setLoading(false);
         }
@@ -43,8 +47,9 @@ class MissionService {
                     return response;
                 });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error)
+            Alert.alert(`Cập nhật không thành công`, error.response.data.message);
         } finally {
             setLoading(false);
         }
@@ -59,8 +64,9 @@ class MissionService {
                     return response;
                 });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error)
+            Alert.alert(`Xác nhận không thành công`, error.response.data.message);
         } finally {
             setLoading(false);
         }
@@ -78,8 +84,9 @@ class MissionService {
                     return response;
                 });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error)
+            Alert.alert(`Xác nhận không thành công`, error.response.data.message);
         } finally {
             setLoading(false);
         }
@@ -94,8 +101,9 @@ class MissionService {
                     return response;
                 });
         }
-        catch (error) {
+        catch (error: any) {
             console.log(error)
+            Alert.alert(`Xóa không thành công`, error.response.data.message);
         } finally {
             setLoading(false);
         }

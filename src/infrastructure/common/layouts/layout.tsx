@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import authService from '../../repositories/auth/auth.service';
 import { ProfileState } from '../../../core/atoms/profile/profileState';
 import Feather from 'react-native-vector-icons/Feather';
@@ -31,6 +31,7 @@ import folderService from '../../repositories/folder/folder.service';
 const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) => {
     const [token, setToken] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const isFocused = useIsFocused();
 
     const [dataProfile, setDataProfile] = useRecoilState(ProfileState);
     const [, setDataChildren] = useRecoilState(ChildState);
@@ -54,7 +55,6 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
             setIsLoading(true);
         }
     };
-
 
     const onShareLocationAsync = async (latitude: number, longitude: number) => {
         try {
@@ -168,6 +168,13 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
         }
     }, [token]);
 
+    useEffect(() => {
+        if (isFocused) {
+            getProfileUser();
+            GetMyChildrenAsync();
+        }
+    }, [isFocused]);
+
     const GetMyInspectorAsync = async () => {
         try {
             await inspectorService.getInspector(
@@ -254,34 +261,33 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
     };
 
     const onSharePinAsync = async (level: number) => {
+        console.log("level", level);
         try {
-            await userService.sharePin(
-                {
-                    "batteryLevel": level,
-                },
-                () => { }
-            ).then(() => { });
+            await userService.sharePin({ batteryLevel: level }, () => { });
         } catch (error) {
             console.error(error);
         }
     };
-    
+
     useEffect(() => {
         const fetchBattery = async () => {
-            const level = await DeviceInfo.getBatteryLevel(); // trả về số từ 0 -> 1
-            onSharePinAsync(Math.round(level * 100));
+            const level = await DeviceInfo.getBatteryLevel();
+            if (level != null && !isNaN(level)) {
+                const percent = Math.round(level * 100);
+                console.log("Battery level:", percent + "%");
+                onSharePinAsync(percent);
+            }
         };
-
         // Gọi lần đầu khi component mount
         fetchBattery();
 
-        // Thiết lập interval mỗi 5 phút
-        const interval = setInterval(() => {
-            fetchBattery();
-        }, 5 * 60 * 1000); // 5 phút = 300000ms
+        // // Thiết lập interval mỗi 5 phút
+        // const interval = setInterval(() => {
+        //     fetchBattery();
+        // }, 5 * 60 * 1000); // 5 phút = 300000ms
 
-        // Clear interval khi unmount
-        return () => clearInterval(interval);
+        // // Clear interval khi unmount
+        // return () => clearInterval(interval);
     }, []);
 
 

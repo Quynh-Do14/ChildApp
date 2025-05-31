@@ -96,7 +96,7 @@ export default class Constants {
                 value: "EditProfile",
                 label: "Chỉnh sửa hồ sơ",
                 icon: "settings-sharp",
-                roles: ["admin", "parent"]
+                roles: ["admin", "parent", "child"]
             },
             {
                 value: "ChangePasswordScreen",

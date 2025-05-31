@@ -58,7 +58,7 @@ const WebBLockScreen = () => {
                 setBrowerList(response);
             }
         } catch (error) {
-            Alert.alert('Lỗi', 'Không thể tải danh sách trẻ');
+            Alert.alert('Lỗi', 'Không thể tải danh sách trình duyệt');
             console.error('Fetch children error:', error);
         }
     };
@@ -104,7 +104,7 @@ const WebBLockScreen = () => {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Xác nhận', 'Bạn có chắc muốn xoá trẻ này?', [
+        Alert.alert('Xác nhận', 'Bạn có chắc muốn xóa trình duyệt này?', [
             { text: 'Hủy', style: 'cancel' },
             {
                 text: 'Xóa',
@@ -115,7 +115,7 @@ const WebBLockScreen = () => {
                             await fetchWeb();
                         }
                     } catch (error) {
-                        Alert.alert('Lỗi', 'Xóa trẻ thất bại');
+                        Alert.alert('Lỗi', 'Xóa thất bại');
                         console.error('Delete child error:', error);
                     }
                 },
@@ -132,7 +132,7 @@ const WebBLockScreen = () => {
     const renderItem = ({ item }: any) => (
         <View style={styles.browserItem}>
             <View style={styles.info}>
-                <TouchableOpacity onPress={() => handleOpenUrl(item.appName)}>
+                <TouchableOpacity>
                     <Text style={styles.details}>
                         URL: <Text style={styles.link}>{item.appName}</Text>
                     </Text>

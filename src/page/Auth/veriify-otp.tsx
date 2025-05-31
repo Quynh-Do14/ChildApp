@@ -43,8 +43,6 @@ const OtpVerificationScreen = () => {
                 setLoading
             ).then((response) => {
                 if (response) {
-                    console.log("response", response);
-
                     navigation.replace('DrawerMenu');
                 }
             });

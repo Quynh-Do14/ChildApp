@@ -29,6 +29,7 @@ type Mission = {
     id: string;
     child: {
         id: string;
+        name: string
     };
     title: string;
     description: string;
@@ -90,7 +91,6 @@ const MissionScreen = () => {
                 setListMission(response.content);
             }
         } catch (error) {
-            Alert.alert('Lỗi', 'Không thể tải danh sách nhiệm vụ');
             console.error('Fetch missions error:', error);
         }
     };
@@ -147,7 +147,6 @@ const MissionScreen = () => {
                 closeSheet();
             }
         } catch (error) {
-            Alert.alert('Lỗi', editingId ? 'Cập nhật thất bại' : 'Tạo mới thất bại');
             console.error('Mission operation error:', error);
         }
     };
@@ -164,7 +163,6 @@ const MissionScreen = () => {
                             await fetchMissions();
                         }
                     } catch (error) {
-                        Alert.alert('Lỗi', 'Xóa nhiệm vụ thất bại');
                         console.error('Delete mission error:', error);
                     }
                 },
@@ -231,7 +229,23 @@ const MissionScreen = () => {
     }, [isFocused]);
     // Render helpers
     const renderMissionActions = (mission: Mission) => {
-        if (mission.confirm) return null;
+        if (mission.confirm) {
+            if (dataProfile?.role === 'parent') {
+                return (
+                    <View style={styles.actions}>
+                        <TouchableOpacity
+                            onPress={() => handleDeleteMission(mission.id)}
+                            style={styles.button}
+                        >
+                            <Text style={[styles.buttonText, styles.deleteText]}>Xóa</Text>
+                        </TouchableOpacity>
+                    </View>
+                )
+            }
+            else {
+                return null
+            }
+        };
 
         if (dataProfile?.role === 'child') {
             if (mission.completedAt) {
@@ -248,6 +262,9 @@ const MissionScreen = () => {
                     <TouchableOpacity onPress={() => handleCompleteMission(mission)} style={styles.button}>
                         <Text style={styles.buttonText}>Hoàn thành</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleEditMission(mission)} style={styles.button}>
+                        <Text style={styles.buttonText}>Sửa</Text>
+                    </TouchableOpacity>
                 </View>
             );
         }
@@ -261,6 +278,12 @@ const MissionScreen = () => {
                             style={styles.button}
                         >
                             <Text style={styles.buttonText}>Xác nhận</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => handleDeleteMission(mission.id)}
+                            style={styles.button}
+                        >
+                            <Text style={[styles.buttonText, styles.deleteText]}>Xóa</Text>
                         </TouchableOpacity>
                     </View>
                 );
@@ -285,10 +308,11 @@ const MissionScreen = () => {
 
     const renderMissionItem = ({ item }: { item: Mission }) => (
         <View style={styles.taskItem}>
-            <TouchableOpacity onPress={() => handleCompleteMission(item)}>
+            <TouchableOpacity>
                 <Text style={[styles.taskTitle, item.confirm && styles.completed]}>
                     {item.title}
                 </Text>
+                <Text style={styles.description}>Nhiệm vụ của {item.child?.name}</Text>
                 <Text style={styles.description}>{item.description}</Text>
                 <Text style={styles.deadline}>
                     Hạn: {convertDate(item.deadline)} | Điểm: {item.points}

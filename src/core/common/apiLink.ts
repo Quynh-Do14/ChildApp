@@ -16,6 +16,8 @@ export class Endpoint {
         static MyConversation = "/conversations/my-conversations"
         static SendMessage = "/conversations/send-message"
         static ChatLog = "/conversations/chatlogs"
+        static GetConversation = "/conversations/get"
+
     }
     static User = class {
         static MyChild = "/users/my-children"

@@ -17,8 +17,6 @@ class AuthService {
                         await saveToken(
                             response.accessToken,
                         );
-
-                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
                     setLoading(false);
                     return response;
@@ -31,9 +29,7 @@ class AuthService {
         }
     }
 
-
     async loginOTP(otp: string, setLoading: Function) {
-        console.log("otp", otp);
         setLoading(true);
         try {
             return await RequestService
@@ -42,12 +38,9 @@ class AuthService {
                 )
                 .then(async response => {
                     if (response) {
-                        console.log("response", response);
                         await saveToken(
-                            response.refreshToken,
+                            response.accessToken,
                         );
-
-                        await this.registerFCMTokenAfterLogin(response.userProfile.email);
                     }
                     setLoading(false);
                     return response;
@@ -112,23 +105,21 @@ class AuthService {
     async profile(setLoading: Function) {
         setLoading(true);
         try {
-            await RequestService.
-                post(Endpoint.Notification.RegisterToken, {
-                    token: await fcmService.getFCMToken(),
-                }).then(response => {
-                    return response;
-                }
-                ).catch(error => {
-                    console.log("Register token error", error);
-                });
+            // Gọi đăng ký FCM token nhưng không làm ảnh hưởng tới luồng chính nếu lỗi
+            try {
+                const token = await fcmService.getFCMToken();
+                console.log("token", token);
+                await RequestService.post(Endpoint.Notification.RegisterToken, { token });
+            } catch (error) {
+                console.log("Register token error", error);
+            }
 
-            return await RequestService.
-                get(Endpoint.Auth.Profile).then(response => {
-                    return response;
-                });
-        }
-        catch (error) {
-            console.log(error);
+            // Gọi lấy thông tin profile và return
+            const response = await RequestService.get(Endpoint.Auth.Profile);
+            return response;
+        } catch (error) {
+            console.log("Lỗi lấy profile:", error);
+            throw error; // có thể throw lại nếu muốn handle bên ngoài
         } finally {
             setLoading(false);
         }

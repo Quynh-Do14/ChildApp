@@ -5,8 +5,6 @@ import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import MainLayout from '../../infrastructure/common/layouts/layout';
 import InputTextCommon from '../../infrastructure/common/components/input/input-text-common';
 import ButtonCommon from '../../infrastructure/common/components/button/button-common';
-import InputDatePickerCommon from '../../infrastructure/common/components/input/input-date-common';
-import InputPasswordCommon from '../../infrastructure/common/components/input/input-password-common';
 import userService from '../../infrastructure/repositories/user/user.service';
 import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
 import { useIsFocused } from '@react-navigation/native';

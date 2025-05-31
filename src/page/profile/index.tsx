@@ -27,7 +27,7 @@ const ProfileScreen = ({ navigation }: any) => {
 
     const location = useRecoilValue(LocationState).data
     const isFocused = useIsFocused();
-    const [dataProfile, setDataProfile] = useRecoilState(ProfileState);
+    const dataProfile = useRecoilValue(ProfileState).data;
 
     const navigateEditProfile = (value: string) => {
         navigation.navigate(value);
@@ -85,25 +85,6 @@ const ProfileScreen = ({ navigation }: any) => {
             console.error(error);
         }
     };
-    const getProfileUser = async () => {
-        try {
-            const response = await authService.profile(() => { });
-            if (response) {
-                setDataProfile({ data: response });
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
-    useEffect(() => {
-        getProfileUser();
-    }, []);
-
-    useEffect(() => {
-        if (isFocused) {
-            getProfileUser();
-        }
-    }, [isFocused]);
 
     return (
         <MainLayout title={'Trang cá nhân'}>
@@ -112,8 +93,8 @@ const ProfileScreen = ({ navigation }: any) => {
                 <View style={styles.profileBox}>
                     <Image
                         source={
-                            dataProfile.data?.avatar
-                                ? { uri: configImageURL(dataProfile.data?.avatar) }
+                            dataProfile?.avatar
+                                ? { uri: configImageURL(dataProfile?.avatar) }
                                 :
                                 require('../../assets/images/avatar.png')
                         }
@@ -123,8 +104,8 @@ const ProfileScreen = ({ navigation }: any) => {
                         isLoading
                         &&
                         <View style={{ marginLeft: 16 }}>
-                            <Text style={styles.name}>{dataProfile.data?.name}</Text>
-                            <Text style={styles.email}>{dataProfile.data?.email}</Text>
+                            <Text style={styles.name}>{dataProfile?.name}</Text>
+                            <Text style={styles.email}>{dataProfile?.email}</Text>
                         </View>
                     }
 
@@ -133,7 +114,7 @@ const ProfileScreen = ({ navigation }: any) => {
                 {/* Menu các dòng chọn */}
                 <View style={styles.menuList}>
                     {Constants.InfoUser.List.map((it, index) => {
-                        if (it.roles.includes(dataProfile.data.role)) {
+                        if (it.roles.includes(dataProfile.role)) {
                             return (
                                 <TouchableOpacity
                                     key={index}

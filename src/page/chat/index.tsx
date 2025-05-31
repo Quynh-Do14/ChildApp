@@ -3,11 +3,10 @@ import React, { useEffect, useState } from 'react'
 import MainLayout from '../../infrastructure/common/layouts/layout'
 import conversationService from '../../infrastructure/repositories/conversation/conversation.service';
 import userService from '../../infrastructure/repositories/user/user.service';
-import LoadingFullScreen from '../../infrastructure/common/components/controls/loading';
-import RestoreComponent from './restore';
 import { useRecoilValue } from 'recoil';
 import { ProfileState } from '../../core/atoms/profile/profileState';
-import { convertUtcToVietnamTime } from '../../infrastructure/helper/helper';
+import { convertTimeOnly } from '../../infrastructure/helper/helper';
+import { useIsFocused } from '@react-navigation/native';
 
 export const fakeConversations = [
     {
@@ -40,6 +39,7 @@ const ChatListScreen = ({ navigation }: any) => {
 
     const [myChildrenNew, setMyChildrenNew] = useState<any[]>([])
     const dataProfile = useRecoilValue(ProfileState).data;
+    const isFocused = useIsFocused();
 
     const GetMyConversationAsync = async () => {
         try {
@@ -82,12 +82,18 @@ const ChatListScreen = ({ navigation }: any) => {
             }
         }
     }
-    console.log("parent", parent);
 
     useEffect(() => {
         GetMyChldrenAsync().then(() => { });
         GetMyConversationAsync().then(() => { });
     }, [])
+
+    useEffect(() => {
+        if (isFocused) {
+            GetMyChldrenAsync().then(() => { });
+            GetMyConversationAsync().then(() => { });
+        }
+    }, [isFocused]);
 
     useEffect(() => {
         let isMounted = true; // Tránh memory leak khi component unmount
@@ -105,40 +111,47 @@ const ChatListScreen = ({ navigation }: any) => {
             isMounted = false;
         };
     }, []);
-    // console.log("myConversation", myConversation);
-    // console.log("myChildren", myChildren);
 
     useEffect(() => {
-        let newArr: React.SetStateAction<any[]> = []
-        if (dataProfile?.role === 'parent') {
-            if (myChildren) {
-                for (let i = 0; i < myChildren.length; i++) {
-                    for (let j = 0; j < myConversation.length; j++) {
-                        if (myChildren[i].id == myConversation[j].wantToSendUser.id) {
-                            newArr.push({
-                                ...myChildren[i],
-                                chatId: myConversation[j].id
-                            })
-                        }
+        // let newArr: React.SetStateAction<any[]> = []
+        // if (dataProfile?.role === 'parent') {
+        //     if (myChildren) {
+        //         for (let i = 0; i < myChildren.length; i++) {
+        //             for (let j = 0; j < myConversation.length; j++) {
+        //                 if (myChildren[i].id == myConversation[j].wantToSendUser.id) {
+        //                     newArr.push({
+        //                         ...myChildren[i],
+        //                         chatId: myConversation[j].id
+        //                     })
+        //                 }
 
-                    }
-                }
-                setMyChildrenNew(newArr)
-            }
+        //             }
+        //         }
+        //         setMyChildrenNew(newArr)
+        //     }
+        // }
+        // else {
+        //     myConversation.map((item) => {
+        //         if (item.wantToSendUser.id == parent.id) {
+        //             newArr.push({
+        //                 ...parent,
+        //                 chatId: item.id
+        //             })
+        //         }
+        //     });
+        //     // console.log("newArr", newArr);
+        //     setMyChildrenNew(newArr)
+        // }
+        if (dataProfile?.role === 'parent') {
+            setMyChildrenNew(myChildren)
         }
         else {
-            myConversation.map((item) => {
-                if (item.wantToSendUser.id == parent.id) {
-                    newArr.push({
-                        ...parent,
-                        chatId: item.id
-                    })
-                }
-            });
-            // console.log("newArr", newArr);
-            setMyChildrenNew(newArr)
+            const newArr = []
+            newArr.push(parent)
+            setMyChildrenNew(newArr);
         }
     }, [myChildren, myConversation])
+
     const renderItem = ({ item }: any) => (
         <TouchableOpacity
             style={styles.chatItem}
@@ -162,7 +175,7 @@ const ChatListScreen = ({ navigation }: any) => {
                 </Text>
             </View>
             <Text style={styles.time}>
-                {convertUtcToVietnamTime(item.lastMessageTime)}
+                {convertTimeOnly(item.lastMessageTime)}
                 {/* {new Date(item.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} */}
             </Text>
         </TouchableOpacity>
@@ -175,7 +188,7 @@ const ChatListScreen = ({ navigation }: any) => {
                 // Điều hướng sang màn ChatBotScreen (hoặc ChatDetailScreen)
                 navigation.navigate('ChatSlugScreen',
                     {
-                        chatId: item.chatId,
+                        childrenId: item.id,
                         receiverId: item.id,
                         name: item.name
                     });
@@ -221,7 +234,7 @@ const ChatListScreen = ({ navigation }: any) => {
                         <FlatList
                             data={myChildrenNew}
                             renderItem={renderItemUser}
-                            keyExtractor={(item) => item.chatId}
+                            keyExtractor={(item) => item.id}
                             contentContainerStyle={styles.listContainer}
                         />
                 }

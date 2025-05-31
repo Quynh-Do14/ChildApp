@@ -47,6 +47,20 @@ class CourseClassService {
             setLoading(false);
         }
     }
+    async GetConversationById(id: String, setLoading: Function) {
+        setLoading(true)
+        try {
+            return await RequestService.
+                get(`${Endpoint.Conversation.GetConversation}/${id}`).then(response => {
+                    return response;
+                });
+        }
+        catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false);
+        }
+    }
 }
 
 export default new CourseClassService();

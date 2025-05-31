@@ -39,8 +39,8 @@ const ChatSlugScreen = () => {
     const folderData = useRecoilValue(FolderState).data
 
     const route = useRoute();
-    const { chatId, receiverId, name } = route.params;
-    // console.log("chatId, receiverId, name", chatId, receiverId, name);
+    const { childrenId, chatId, receiverId, name } = route.params;
+    console.log("chatId, receiverId, name", childrenId, chatId, receiverId, name);
 
     const getTokenStoraged = async () => {
         const storedToken = await AsyncStorage.getItem('token');
@@ -56,11 +56,21 @@ const ChatSlugScreen = () => {
     const flatListRef = useRef<FlatList>(null);
     const stompClientRef = useRef<Client | null>(null);
 
-
-    console.log("folderData", folderData);
-
     const GetMyChatLogAsync = async () => {
-        if (chatId) {
+        if (childrenId) {
+            try {
+                const response = await conversationService.GetConversationById(
+                    String(childrenId),
+                    setLoading,
+                );
+                if (response) {
+                    setChatLog(response);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        else if (chatId) {
             try {
                 const response = await conversationService.GetChatLogById(
                     String(chatId),

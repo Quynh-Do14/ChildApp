@@ -70,9 +70,11 @@ const WebiewScreen = () => {
                     style={{ flex: 1 }}
                     onNavigationStateChange={handleNavigationStateChange}
                     onShouldStartLoadWithRequest={(request) => {
+                        console.log("request", request);
+
                         const isBlocked = isBlockedUrl(request.url);
                         if (isBlocked) {
-                            Alert.alert('Cảnh báo', 'Trang web này bị chặn vì lý do an toàn.');
+                            Alert.alert('Trình duyện bị chặn', `Những trình duyệt chứa từ này sẽ bị chặn`);
                             return false;
                         }
                         return true;
