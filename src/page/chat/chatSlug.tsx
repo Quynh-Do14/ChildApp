@@ -233,7 +233,6 @@ const ChatSlugScreen = () => {
             }
         });
     };
-    console.log("chatLog", chatLog);
 
     return (
         <MainLayout

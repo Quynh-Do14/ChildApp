@@ -57,8 +57,8 @@ const CustomDrawerContent = ({ navigation }: any) => {
             <View style={styles.profileContainer}>
                 <Image
                     source={
-                        dataProfile?.avatar
-                            ? { uri: configImageURL(dataProfile?.avatar) }
+                        dataProfile?.avatarCode
+                            ? { uri: `http://103.216.117.244:9999/files/preview/${dataProfile?.avatarCode}` }   
                             :
                             require('../../../assets/images/avatar.png')
                     }

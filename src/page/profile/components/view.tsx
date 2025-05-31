@@ -31,8 +31,8 @@ const EditProfile = () => {
                     <View style={styles.header}>
                         <Image
                             source={
-                                dataProfile?.avatar
-                                    ? { uri: configImageURL(dataProfile?.avatar) }
+                                dataProfile?.avatarCode
+                                    ? { uri: `http://103.216.117.244:9999/files/preview/${dataProfile?.avatarCode}` }
                                     :
                                     require('../../../assets/images/myAvatar.png')
                             }
@@ -89,10 +89,12 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     avatar: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 100,
+        height: 100,
+        borderRadius: 99,
         marginRight: 12,
+        borderWidth: 2,
+        borderColor: "#3b82f6"
     },
     headerText: {
         flexDirection: 'column',

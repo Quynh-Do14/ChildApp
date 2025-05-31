@@ -80,7 +80,6 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
                 watchId.current = Geolocation.watchPosition(
                     position => {
                         const { latitude, longitude } = position.coords;
-                        console.log('New location:', latitude, longitude);
 
                         // Cập nhật vị trí vào state
                         setPosition({ data: position });

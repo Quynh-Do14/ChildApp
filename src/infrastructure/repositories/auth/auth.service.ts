@@ -127,10 +127,10 @@ class AuthService {
 
     async updateProfile(data: object, setLoading: Function) {
         setLoading(true)
-
+        console.log("data", data);
         try {
             return await RequestService.putForm(Endpoint.Auth.UpdateProfile,
-                { ...data }
+                data
             ).then(response => {
                 Alert.alert(`Cập nhật thành công`);
                 return response;
@@ -147,8 +147,6 @@ class AuthService {
     async resetPassword(otp: string, newPassword: string, setLoading: Function) {
         setLoading(true)
         try {
-            console.log("otp", otp);
-            console.log("newPassword", newPassword);
             return await RequestService.post(`${Endpoint.Auth.ResetPassword}?otp=${otp}&newPassword=${newPassword}`,
 
                 {}
