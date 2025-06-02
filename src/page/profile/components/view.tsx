@@ -32,7 +32,7 @@ const EditProfile = () => {
                         <Image
                             source={
                                 dataProfile?.avatarCode
-                                    ? { uri: `http://103.216.117.244:9999/files/preview/${dataProfile?.avatarCode}` }
+                                    ? { uri: `${configImageURL(dataProfile?.avatarCode)}` }
                                     :
                                     require('../../../assets/images/myAvatar.png')
                             }

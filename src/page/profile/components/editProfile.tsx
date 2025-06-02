@@ -172,7 +172,7 @@ const EditProfile = () => {
                   source={{
                     uri: imageUri
                       ? imageUri
-                      : `http://103.216.117.244:9999/files/preview/${dataProfile?.avatar}`,
+                      : `${configImageURL(dataProfile?.avatar)}`,
                   }}
                   style={styles.avatar}
                 />

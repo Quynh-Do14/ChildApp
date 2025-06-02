@@ -59,6 +59,9 @@ const ChatListScreen = ({ navigation }: any) => {
         if (dataProfile?.role === 'parent') {
             try {
                 await userService.getChild(
+                    {
+                        size: 1000
+                    },
                     setLoading,
                 ).then((response) => {
                     if (response) {

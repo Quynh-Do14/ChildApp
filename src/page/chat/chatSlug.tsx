@@ -24,6 +24,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import ModalFolderPicker from './modal';
 import { useRecoilValue } from 'recoil';
 import { FolderState } from '../../core/atoms/folder/folderState';
+import { configImageURL } from '../../infrastructure/helper/helper';
 
 const ChatSlugScreen = () => {
     const [inputText, setInputText] = useState('');
@@ -40,7 +41,7 @@ const ChatSlugScreen = () => {
 
     const route = useRoute();
     const { childrenId, chatId, receiverId, name } = route.params;
-    console.log("chatId, receiverId, name", childrenId, chatId, receiverId, name);
+    // console.log("chatId, receiverId, name", childrenId, chatId, receiverId, name);
 
     const getTokenStoraged = async () => {
         const storedToken = await AsyncStorage.getItem('token');
@@ -186,7 +187,7 @@ const ChatSlugScreen = () => {
                     item.type == "IMG"
                         ?
                         <Image
-                            source={{ uri: `http://103.216.117.244:9999/files/preview/${item.message}` }}
+                            source={{ uri: `${configImageURL(item.message)}` }}
                             style={{ width: 200, height: 400 }}
                             resizeMode="cover"
                         />

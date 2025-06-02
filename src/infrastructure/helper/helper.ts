@@ -1,6 +1,7 @@
 import moment from "moment";
 import Constants from "../../core/common/constants";
-const baseURL = "http://192.168.100.79:8080/api";
+import { API_URL } from '@env';
+const baseURL = API_URL;
 export const validateFields = (isImplicitChange: boolean, key: any, isCheck: boolean, setError: Function, error: any, message: string) => {
     if (isImplicitChange) {
         error[key] = {
@@ -179,7 +180,7 @@ export const formatCurrencyVND = (amount: string) => {
 
 export const configImageURL = (image: string) => {
     if (image) {
-        return `${baseURL}/images/uploads/avatars/${image}`;
+        return `${baseURL}/files/preview/${image}`;
     }
     return ""
 }
@@ -227,18 +228,5 @@ export function getVietnameseDayOfWeek(dayNumber: number): string {
         "Chủ nhật",
     ];
     const result = String(days[dayNumber - 1])
-    return result || "Không hợp lệ";
-}
-export function translateDayToVietnamese(day: string) {
-    const days = {
-        MONDAY: "Thứ hai",
-        TUESDAY: "Thứ ba",
-        WEDNESDAY: "Thứ tư",
-        THURSDAY: "Thứ năm",
-        FRIDAY: "Thứ sáu",
-        SATURDAY: "Thứ bảy",
-        SUNDAY: "Chủ nhật"
-    };
-    const result = days[day.toUpperCase()]
     return result || "Không hợp lệ";
 }
