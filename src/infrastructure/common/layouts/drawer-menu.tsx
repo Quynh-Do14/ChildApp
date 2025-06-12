@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { bottomNavigator } from '../../../core/common/navigator';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -10,7 +10,7 @@ import { configImageURL } from '../../helper/helper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Drawer = createDrawerNavigator();
-
+const width = Dimensions.get('window').width;
 const CustomDrawerContent = ({ navigation }: any) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [token, setToken] = useState<string>('');
@@ -69,7 +69,7 @@ const CustomDrawerContent = ({ navigation }: any) => {
                     &&
                     <View style={{ marginLeft: 10, flexDirection: "column", gap: 8 }}>
                         <Text style={styles.name}>{dataProfile.name}</Text>
-                        <Text style={styles.class}>{dataProfile.email}</Text>
+                        <Text numberOfLines={1} style={styles.class}>{dataProfile.email}</Text>
                     </View>
                 }
             </View>
@@ -153,6 +153,8 @@ const styles = StyleSheet.create({
     class: {
         color: '#ddd',
         fontSize: 12,
+        overflow: "hidden",
+        width: 150
     },
     divider: {
         height: 1,

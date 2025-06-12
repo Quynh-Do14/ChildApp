@@ -80,6 +80,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
                 watchId.current = Geolocation.watchPosition(
                     position => {
                         const { latitude, longitude } = position.coords;
+                        console.log("latitude", latitude, longitude);
 
                         // Cập nhật vị trí vào state
                         setPosition({ data: position });
@@ -124,7 +125,7 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
             subscription.remove();
             stopTracking();
         };
-    }, [setPosition,]);
+    }, [isFocused, appState]);
 
 
     useEffect(() => {
@@ -266,7 +267,6 @@ const MainLayout = ({ onGoBack, isBackButton = false, title, ...props }: any) =>
     };
 
     const onSharePinAsync = async (level: number) => {
-        console.log("level", level);
         try {
             await userService.sharePin({ batteryLevel: level }, () => { });
         } catch (error) {

@@ -69,18 +69,18 @@ class AuthService {
     }
 
     async logout(setLoading: Function) {
-        setLoading(true)
+        setLoading(true);
         try {
+            console.log("Deleting FCM token...");
             await fcmService.deleteToken();
-            await RequestService.
-                post(Endpoint.Auth.Logout,
-                    {}
-                ).then(response => {
-                    return response;
-                });
+
+            console.log("Calling API logout...");
+            await RequestService.post(Endpoint.Auth.Logout, {});
+
+            console.log("Clearing storage...");
             clearStorage();
         } catch (error) {
-            console.log(error);
+            console.error("Logout failed:", error);
         } finally {
             setLoading(false);
         }
